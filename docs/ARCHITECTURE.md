@@ -61,7 +61,7 @@ Sõltuvused käivad ainult ühes suunas: skriptid → lib → config.
 | Moodul | Vastutus |
 |---|---|
 | `lib/bootstrap.sh` | laeb kõik moodulid õiges järjekorras, initsialiseerib logi ja veatrapi |
-| `lib/colors.sh` | värvid ja sümbolid ([x] ⚠ ✗); väljas, kui väljund pole terminal |
+| `lib/colors.sh` | värvid ja sümbolid (✓ ⚠ ✗); väljas, kui väljund pole terminal |
 | `lib/logger.sh` | logifail; `run_logged` suunab käsu väljundi logisse |
 | `lib/ui.sh` | KOGU kasutajale nähtav väljund (eesti keeles) |
 | `lib/checks.sh` | käskude/pakettide olemasolu, Ubuntu versioon, NVM-i laadimine |

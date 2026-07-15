@@ -26,6 +26,6 @@ else
     C_RESET=''
 fi
 
-SYM_OK="[x]"
+SYM_OK="✓"
 SYM_WARN="⚠"
 SYM_ERR="✗"

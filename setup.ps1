@@ -35,9 +35,9 @@ $env:WSL_UTF8 = '1'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
 function Write-Info([string]$m) { Write-Host $m -ForegroundColor Cyan }
-function Write-Ok([string]$m) { Write-Host "[x] $m" -ForegroundColor Green }
+function Write-Ok([string]$m) { Write-Host "✓ $m" -ForegroundColor Green }
 function Write-Warn([string]$m) { Write-Host "! $m" -ForegroundColor Yellow }
-function Write-Err([string]$m) { Write-Host "X $m" -ForegroundColor Red }
+function Write-Err([string]$m) { Write-Host "✗ $m" -ForegroundColor Red }
 function Fail([string]$m) {
     Write-Err $m
     Write-Host ''
