@@ -77,7 +77,13 @@ function Assert-Prerequisites {
             'Vajalik on Windows 10 versioon 2004 (build 19041) või uuem. Uuenda Windowsit ja proovi uuesti.')
     }
     if (-not (Get-Command wsl.exe -ErrorAction SilentlyContinue)) {
-        Fail 'Programmi wsl.exe ei leitud. Uuenda Windowsit ja proovi uuesti.'
+        Write-Err 'Sinu Windowsil puudub WSL-i tugi (wsl.exe). Tõenäoliselt on Windows pikalt uuendamata.'
+        Write-Host ''
+        Write-Info 'Kuidas parandada:'
+        Write-Info '  1. Ava: Seaded -> Windows Update'
+        Write-Info '  2. Paigalda KÕIK pakutavad uuendused (võib vajada mitut taaskäivitust).'
+        Write-Info '  3. Käivita seejärel sama käsk uuesti.'
+        Fail 'Paigaldust ei saa enne Windowsi uuendamist jätkata.'
     }
     Write-Ok 'Windowsi eelkontroll läbitud.'
 }
