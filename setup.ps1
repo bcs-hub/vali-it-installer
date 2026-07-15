@@ -300,8 +300,8 @@ function Invoke-IdeaSetup {
             Add-Ok 'IntelliJ seaded (heap, ML-completion, brauser jm)'
         }
         'existing' {
-            Write-Warn 'IntelliJ-l on olemasolev konfiguratsioon — seadeid ei kirjutatud üle. Impordi need ise.'
-            Add-Manual 'IntelliJ seaded: impordi kursuse seaded käsitsi (sul oli olemasolev IDEA konfiguratsioon)' $settingsPdf `
+            Write-Warn 'IntelliJ-l on juba oma seadistus — installer ei kirjuta seda üle. Impordi kursuse seaded ise (juhis kokkuvõttes).'
+            Add-Manual 'IntelliJ seaded: sinu IntelliJ-l on juba oma seadistus, mida installer üle ei kirjuta — impordi kursuse seaded ise' $settingsPdf `
                 "Seadete fail: $(Get-RawUrl 'docs/IntelliJ/settings.zip') — salvesta TERVE zip ja ÄRA paki seda lahti (IDEA impordib zip-faili tervikuna)"
         }
         default {
@@ -311,6 +311,18 @@ function Invoke-IdeaSetup {
 
     $plugins = @(Read-ConfigFile (Join-Path $script:RepoDir 'config\intellij-plugins.conf'))
     if ($plugins.Count -eq 0) { return }
+
+    # Headless plugin install cannot work while the IDE itself is running.
+    if (Get-Process -Name idea64 -ErrorAction SilentlyContinue) {
+        $pluginNames = @($plugins | ForEach-Object { $_.F2 }) -join ', '
+        $otherPdfs = @($plugins | Select-Object -Skip 1 | ForEach-Object { Get-DocUrl $_.F3 }) -join ' ja '
+        Write-Warn 'IntelliJ on praegu avatud — pluginaid ei saa paigaldada, kui IntelliJ töötab.'
+        Add-Manual "IntelliJ pluginad ($pluginNames): IntelliJ oli paigalduse ajal avatud. Sulge IntelliJ ja käivita installer uuesti — siis paigalduvad pluginad automaatselt" `
+            $plugins[0].F3 `
+            $(if ($otherPdfs) { "Käsitsi paigalduse juhendid: $otherPdfs" } else { '' })
+        return
+    }
+
     Write-Info 'Paigaldan IntelliJ pluginad (see võib võtta hetke)...'
     $ids = @($plugins | ForEach-Object { $_.F1 })
     $proc = Start-Process -FilePath $ideaExe.FullName -ArgumentList (@('installPlugins') + $ids) `
