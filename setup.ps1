@@ -59,7 +59,9 @@ function Add-Fail([string]$Name, [string]$Pdf) {
 function Add-Manual([string]$Name, [string]$Pdf, [string]$Extra = '') {
     $script:ManualList += [pscustomobject]@{ Name = $Name; Pdf = $Pdf; Extra = $Extra }
 }
-function Get-DocUrl([string]$Path) { "https://github.com/$RepoSlug/blob/main/$Path" }
+# ?raw=true makes GitHub serve the file as a direct download — no need to
+# hunt for the download button on the blob page.
+function Get-DocUrl([string]$Path) { "https://github.com/$RepoSlug/blob/main/$Path`?raw=true" }
 function Get-RawUrl([string]$Path) { "https://raw.githubusercontent.com/$RepoSlug/main/$Path" }
 
 # Exiting kills the whole PowerShell session under 'irm | iex' — the console
@@ -551,11 +553,10 @@ function Show-Summary([string]$DistroName) {
         foreach ($x in $script:OkList) { Write-Host "  ✓ $x" -ForegroundColor Green }
     }
 
-    # GitHub does not always render PDFs in the browser; show the download
-    # hint once, before the first block that contains guide links.
+    # Guide links carry ?raw=true and download directly; tell the student
+    # once where the file lands, before the first block with links.
     $pdfHintShown = $false
-    $pdfHint = 'NB! GitHub ei pruugi PDF-juhendit brauseris avada — laadi fail lehelt alla' +
-        ' (allalaadimisnupp: nool alla kriipsu poole, lehe paremas servas).'
+    $pdfHint = 'NB! Juhendi link laadib PDF-faili otse alla — vaata brauseri allalaadimiste kausta.'
 
     if ($script:FailList.Count -gt 0) {
         Write-Host ''
