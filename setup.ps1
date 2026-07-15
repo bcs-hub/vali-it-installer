@@ -582,9 +582,12 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += 'h1{border-bottom:2px solid #ccc;padding-bottom:.3em} .aeg{color:#666}'
         $h += '.ok{color:#1a7f37} .fail{color:#b30000} .manual{color:#9a6700}'
         $h += 'li{margin:.4em 0} .lisainfo{font-size:.92em;color:#444} code{background:#f2f2f2;padding:2px 5px}'
+        $h += '.teade{color:#b30000;font-weight:600;border:1px solid #b30000;border-radius:6px;padding:.6em .8em;background:#fff5f5}'
+        $h += 'table{border-collapse:collapse} td{padding:3px 14px 3px 0;vertical-align:top}'
         $h += '</style></head><body>'
         $h += '<h1>Vali-IT paigalduse kokkuvõte</h1>'
         $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm')</p>"
+        $h += '<p class="teade">See kokkuvõte on salvestatud sinu töölauale failina Vali-IT-kokkuvote.html — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>'
         $h += '<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>'
 
         if ($script:OkList.Count -gt 0) {
@@ -617,6 +620,16 @@ function Write-HtmlSummary([string]$DistroName) {
             }
             $h += '</ol>'
         }
+        $h += '<h2>Andmebaasi andmed</h2>'
+        $h += '<table>'
+        $h += '<tr><td><b>Host</b></td><td><code>localhost</code></td></tr>'
+        $h += '<tr><td><b>Port</b></td><td><code>5432</code></td></tr>'
+        $h += "<tr><td><b>Andmebaas</b></td><td><code>$DbName</code></td></tr>"
+        $h += '<tr><td><b>Kasutaja</b></td><td><code>postgres</code></td></tr>'
+        $h += "<tr><td><b>Parool</b></td><td><code>$PgSuperPassword</code></td></tr>"
+        $h += "<tr><td><b>IntelliJ andmeallika URL</b></td><td><code>jdbc:postgresql://localhost:5432/$DbName</code></td></tr>"
+        $h += '</table>'
+
         if ($DistroName) {
             $h += "<p>Ubuntu avamiseks kirjuta terminali: <code>wsl -d $DistroName</code> või otsi Start-menüüst Ubuntu.</p>"
         }
