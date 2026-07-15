@@ -79,7 +79,7 @@ function Invoke-DistroRoot([string]$Name, [string]$Script) {
     & wsl.exe -d $Name -u root -- bash -c $Script 2>$null
 }
 
-# Read a "a | b | c" config file into objects with F1/F2/F3 fields.
+# Read a "a | b | c | d" config file into objects with F1..F4 fields.
 function Read-ConfigFile([string]$Path) {
     $rows = @()
     if (-not (Test-Path $Path)) { return $rows }
@@ -91,6 +91,7 @@ function Read-ConfigFile([string]$Path) {
             F1 = $p[0].Trim()
             F2 = $(if ($p.Count -gt 1) { $p[1].Trim() } else { '' })
             F3 = $(if ($p.Count -gt 2) { $p[2].Trim() } else { '' })
+            F4 = $(if ($p.Count -gt 3) { $p[3].Trim() } else { '' })
         }
     }
     return $rows
@@ -152,9 +153,11 @@ function Test-WingetApp([string]$Id) {
     return ($LASTEXITCODE -eq 0)
 }
 
-# Install every missing app from config/windows-apps.conf. Existing installs
-# (any version) are left untouched — upgrading mid-course is a deliberate
-# manual act, not a side effect.
+# Install every missing app from config/windows-apps.conf. An app counts as
+# present when winget knows its id OR its check command is on PATH (covers
+# manually installed versions winget cannot match, e.g. a non-LTS Node).
+# Existing installs (any version) are left untouched — upgrading mid-course
+# is a deliberate manual act, not a side effect.
 function Install-WindowsApps {
     Write-Host ''
     Write-Info 'Paigaldan Windowsi rakendused...'
@@ -162,7 +165,7 @@ function Install-WindowsApps {
 
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         Write-Warn 'winget puudub — Windowsi rakendusi ei saa automaatselt paigaldada.'
-        foreach ($a in $apps) { Add-Fail $a.F2 $a.F3 }
+        foreach ($a in $apps) { Add-Fail $a.F3 $a.F4 }
         return
     }
 
@@ -170,12 +173,19 @@ function Install-WindowsApps {
     $n = $apps.Count
     foreach ($a in $apps) {
         $i++
-        if (Test-WingetApp $a.F1) {
-            Write-Ok "[$i/$n] $($a.F2) — juba olemas"
-            Add-Ok "$($a.F2) — oli juba olemas"
+        $checkCmd = $a.F2
+        $present = $false
+        if ($checkCmd -and $checkCmd -ne '-' -and (Get-Command $checkCmd -ErrorAction SilentlyContinue)) {
+            $present = $true
+        } elseif (Test-WingetApp $a.F1) {
+            $present = $true
+        }
+        if ($present) {
+            Write-Ok "[$i/$n] $($a.F3) — juba olemas"
+            Add-Ok "$($a.F3) — oli juba olemas"
             continue
         }
-        Write-Info "[$i/$n] Paigaldan: $($a.F2) (võib võtta mitu minutit)..."
+        Write-Info "[$i/$n] Paigaldan: $($a.F3) (võib võtta mitu minutit)..."
         $wingetArgs = @('install', '--id', $a.F1, '-e', '--silent',
             '--accept-package-agreements', '--accept-source-agreements',
             '--disable-interactivity')
@@ -186,11 +196,11 @@ function Install-WindowsApps {
         }
         & winget @wingetArgs
         if ($LASTEXITCODE -eq 0) {
-            Write-Ok "[$i/$n] $($a.F2) — paigaldatud"
-            Add-Ok $a.F2
+            Write-Ok "[$i/$n] $($a.F3) — paigaldatud"
+            Add-Ok $a.F3
         } else {
-            Write-Err "[$i/$n] $($a.F2) — paigaldamine ebaõnnestus"
-            Add-Fail $a.F2 $a.F3
+            Write-Err "[$i/$n] $($a.F3) — paigaldamine ebaõnnestus"
+            Add-Fail $a.F3 $a.F4
         }
     }
 }

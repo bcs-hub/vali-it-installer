@@ -94,7 +94,7 @@ docs/ARCHITECTURE.md arhitektuur ja disainiotsused
 - **eriloogikaga tööriist (Ubuntu):** rida faili `config/ai-tools.conf` +
   funktsioon `install_tool_<id>` failis `lib/installer.sh`
 - **Windowsi rakendus:** üks rida faili `config/windows-apps.conf`
-  (winget-id + PDF-viide käsitsi varuteeks)
+  (winget-id + kontrollkäsk + PDF-viide käsitsi varuteeks)
 - **IntelliJ plugin:** üks rida faili `config/intellij-plugins.conf`
 - **käsitsi samm:** üks rida faili `config/manual-steps.conf`
 

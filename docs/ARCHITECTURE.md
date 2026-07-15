@@ -94,7 +94,7 @@ poolel, et neid lugeda):
 
 | Fail | Formaat | Kasutus |
 |---|---|---|
-| `config/windows-apps.conf` | `winget-id \| kirjeldus \| PDF` | winget-mootor; PDF on käsitsi varutee kokkuvõttes |
+| `config/windows-apps.conf` | `winget-id \| kontrollkäsk \| kirjeldus \| PDF` | winget-mootor; olemas = winget tunneb ID VÕI kontrollkäsk on PATH-is (katab käsitsi paigaldatud versioonid); PDF on käsitsi varutee kokkuvõttes |
 | `config/intellij-plugins.conf` | `plugin-id \| nimi \| PDF` | headless `idea64.exe installPlugins` |
 | `config/manual-steps.conf` | `tekst \| PDF` | kokkuvõtte "Tee ise läbi" nimekiri |
 
