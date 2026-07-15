@@ -38,11 +38,19 @@ function Write-Info([string]$m) { Write-Host $m -ForegroundColor Cyan }
 function Write-Ok([string]$m) { Write-Host "✓ $m" -ForegroundColor Green }
 function Write-Warn([string]$m) { Write-Host "! $m" -ForegroundColor Yellow }
 function Write-Err([string]$m) { Write-Host "✗ $m" -ForegroundColor Red }
+# Exiting kills the whole PowerShell session under 'irm | iex' — the console
+# window closes before the student can read anything. Always pause first.
+function Stop-Installer([int]$Code) {
+    Write-Host ''
+    Read-Host 'Vajuta Enter, et lõpetada' | Out-Null
+    exit $Code
+}
+
 function Fail([string]$m) {
     Write-Err $m
     Write-Host ''
     Write-Host 'Kui vajad abi, pöördu õpetaja poole.' -ForegroundColor Yellow
-    exit 1
+    Stop-Installer 1
 }
 
 # Run a command inside the distro as root. Returns stdout; sets $LASTEXITCODE.
@@ -89,7 +97,7 @@ function Assert-Wsl {
     Write-Host ''
     Write-Warn 'Nüüd on vaja arvuti TAASKÄIVITADA.'
     Write-Warn 'Pärast taaskäivitust ava PowerShell administraatorina ja käivita sama käsk uuesti.'
-    exit 0
+    Stop-Installer 0
 }
 
 function Get-InstalledDistros {
@@ -279,7 +287,7 @@ function Invoke-Installer([string]$Name, [string]$User) {
         Write-Err 'Paigaldus ei lõppenud edukalt.'
         Write-Warn 'Proovi käivitada sama käsk uuesti — juba tehtud osa ei tehta topelt.'
         Write-Warn 'Kui viga kordub, saada õpetajale Ubuntu kaustast fail: ~/.itcrafters/install.log'
-        exit 1
+        Stop-Installer 1
     }
 }
 
