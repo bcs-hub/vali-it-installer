@@ -99,6 +99,10 @@ CI (GitHub Actions) jooksutab iga muudatuse peale ShellChecki,
 PSScriptAnalyzeri ja smoke-testi Ubuntu 22.04 ja 24.04 konteinerites,
 sealhulgas idempotentsustesti (paigaldus kaks korda järjest).
 
+WSL-i eripärade testimiseks päris masinal ("värske õpilase" seis) vt
+[docs/UBUNTU-CLEAN-INSTALL.md](docs/UBUNTU-CLEAN-INSTALL.md) — Ubuntu
+puhas kustutamine ja taaspaigaldus.
+
 ## Tõrkeotsing
 
 - **Midagi ebaõnnestus?** Käivita sama käsk lihtsalt uuesti — installer
