@@ -1,7 +1,7 @@
 ﻿# setup.ps1 - IT Crafters Installer, Windows bootstrap.
 #
 # The student's single entry point. Run in an elevated PowerShell:
-#   irm https://raw.githubusercontent.com/<org>/itcrafters-installer/main/setup.ps1 | iex
+#   irm https://raw.githubusercontent.com/bcs-hub/wsl-package-installer/main/setup.ps1 | iex
 #
 # Resumable state machine: every step checks whether it is already done
 # and skips it, so re-running the same command (e.g. after the WSL reboot)
@@ -19,8 +19,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# TODO: replace with the real organisation/repository once published.
-$RepoSlug = 'it-crafters/itcrafters-installer'
+$RepoSlug = 'bcs-hub/wsl-package-installer'
 
 $SupportedDistros = @('Ubuntu-24.04', 'Ubuntu-22.04')
 $DefaultDistro = 'Ubuntu-24.04'

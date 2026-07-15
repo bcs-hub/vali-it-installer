@@ -68,9 +68,9 @@ directly.
 - **Never delete/reset/unregister an existing distro.** Reuse existing 22.04/24.04; if
   both exist, ask (24.04 recommended; `-Distro` param skips the prompt). Broken distro →
   Estonian message referring to the instructor, no destructive auto-repair.
-- **This will be a public GitHub repo**; students fetch `main` directly. Nothing sensitive
-  in the repo, ever. `setup.ps1` has a `$RepoSlug` TODO to fill in once the real org/repo
-  exists (also update the URL in README.md and docs/ARCHITECTURE.md).
+- **Public GitHub repo: `bcs-hub/wsl-package-installer`**; students fetch `main` directly
+  (`$RepoSlug` in setup.ps1, one-liner URL in README.md). Nothing sensitive in the repo,
+  ever.
 
 ## Hard Requirements (from the spec)
 
