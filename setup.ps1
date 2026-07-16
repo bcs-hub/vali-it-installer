@@ -155,6 +155,24 @@ function Get-RepoFiles {
 
 # --- Windows apps (winget) ---------------------------------------------------
 
+# Find a JDK 21 java.exe in the standard vendor locations. A freshly
+# installed Temurin is not on the current session's PATH yet, and an old
+# PATH java (e.g. Java 8) must not count as JDK 21 — hence explicit globs
+# instead of Get-Command. Newest version wins.
+function Find-Jdk21 {
+    $globs = @(
+        'C:\Program Files\Eclipse Adoptium\jdk-21*\bin\java.exe',
+        'C:\Program Files\Java\jdk-21*\bin\java.exe',
+        'C:\Program Files\Microsoft\jdk-21*\bin\java.exe'
+    )
+    $found = @()
+    foreach ($g in $globs) {
+        $found += @(Get-ChildItem $g -ErrorAction SilentlyContinue)
+    }
+    return $found | Sort-Object { $_.VersionInfo.ProductVersion } -Descending |
+        Select-Object -First 1
+}
+
 function Test-WingetApp([string]$Id) {
     & winget list --id $Id -e --accept-source-agreements *> $null
     return ($LASTEXITCODE -eq 0)
@@ -188,6 +206,10 @@ function Install-WindowsApps {
             # IDEA has no PATH command; Toolbox installs are invisible to
             # 'winget list --id', so look for idea64.exe in known locations.
             $present = $true
+        } elseif ($a.F1 -like 'EclipseAdoptium.Temurin*' -and (Find-Jdk21)) {
+            # Any vendor's JDK 21 counts (Oracle/Microsoft installs are
+            # invisible to the Temurin winget id).
+            $present = $true
         } elseif (Test-WingetApp $a.F1) {
             $present = $true
         }
@@ -204,6 +226,13 @@ function Install-WindowsApps {
             # EDB installer: unattended mode with the course-standard password.
             $wingetArgs += @('--override',
                 "--mode unattended --unattendedmodeui none --superpassword $PgSuperPassword")
+        }
+        if ($a.F1 -like 'EclipseAdoptium.Temurin*') {
+            # MSI: put java on PATH and set JAVA_HOME machine-wide, so
+            # gradlew, IntelliJ and the student's own terminal all find it.
+            # --override replaces the default silent switches -> include /quiet.
+            $wingetArgs += @('--override',
+                '/quiet ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome')
         }
         & winget @wingetArgs
         if ($LASTEXITCODE -eq 0) {
@@ -551,6 +580,132 @@ function Invoke-Installer([string]$Name, [string]$User) {
     }
 }
 
+# --- course project ----------------------------------------------------------
+
+# Freshly installed tools are not on the current session's PATH, so fall
+# back to their default install locations (same trap Find-IdeaExe solves).
+function Find-GitExe {
+    $cmd = Get-Command git.exe -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    $exe = 'C:\Program Files\Git\cmd\git.exe'
+    if (Test-Path $exe) { return $exe }
+    return $null
+}
+
+function Find-NpmCmd {
+    $cmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
+    $exe = 'C:\Program Files\nodejs\npm.cmd'
+    if (Test-Path $exe) { return $exe }
+    return $null
+}
+
+# Clone the course repo(s) from config/course.conf and pre-download their
+# dependencies (frontend: npm ci, backend: gradlew dependencies) so nobody
+# waits for downloads in class. Best-effort: failures land in the summary
+# and never abort the run — the first build downloads what is missing.
+# Servers are NOT started (the student does that in IntelliJ, PDF 023) and
+# nothing is built or tested. An existing project folder is the student's
+# work and is never touched; the preload still runs (it only writes caches).
+function Invoke-CourseSetup {
+    $repos = @(Read-ConfigFile (Join-Path $script:RepoDir 'config\course.conf'))
+    if ($repos.Count -eq 0) { return }
+
+    $log = Join-Path $env:TEMP 'vali-it-course.log'
+    Write-Host ''
+    Write-Info 'Laen alla kursuse projekti ja selle sõltuvused...'
+
+    foreach ($r in $repos) {
+        $url = $r.F1
+        $name = ($url.TrimEnd('/') -split '/')[-1] -replace '\.git$', ''
+        $parent = Join-Path $env:USERPROFILE $r.F2
+        $dir = Join-Path $parent $name
+        $desc = if ($r.F3) { $r.F3 } else { $name }
+        $ok = $true
+
+        if (Test-Path $dir) {
+            Write-Ok "$desc — kaust on juba olemas, ei puutu ($dir)"
+        } else {
+            $git = Find-GitExe
+            if (-not $git) {
+                Add-Fail "$desc — git puudub. Käivita installer uuesti, kui Git on paigaldatud" ''
+                continue
+            }
+            New-Item -ItemType Directory -Path $parent -Force | Out-Null
+            Write-Info "Kloonin: $url"
+            & $git clone $url $dir
+            if ($LASTEXITCODE -ne 0) {
+                Add-Fail "$desc — allalaadimine ebaõnnestus ($url). Kontrolli internetiühendust ja proovi installerit uuesti" ''
+                continue
+            }
+        }
+
+        # Frontend: npm ci needs package-lock.json (a course-repo
+        # requirement); skipped when node_modules already exists so a
+        # re-run stays fast.
+        $frontend = Join-Path $dir 'frontend'
+        if (Test-Path (Join-Path $frontend 'package.json')) {
+            if (Test-Path (Join-Path $frontend 'node_modules')) {
+                Write-Ok "$desc — frontendi sõltuvused on juba olemas"
+            } else {
+                $npm = Find-NpmCmd
+                if (-not (Test-Path (Join-Path $frontend 'package-lock.json'))) {
+                    Add-Fail "$desc — frontendi package-lock.json puudub repost (anna õpetajale teada)" ''
+                    $ok = $false
+                } elseif (-not $npm) {
+                    Add-Fail "$desc — npm puudub, frontendi sõltuvusi ei saanud ette laadida (esimene käivitus laeb need ise)" ''
+                    $ok = $false
+                } else {
+                    Write-Info 'Laen frontendi sõltuvused (npm ci — võib võtta mitu minutit)...'
+                    Push-Location $frontend
+                    & $npm ci --no-audit --no-fund *>> $log
+                    $rc = $LASTEXITCODE
+                    Pop-Location
+                    if ($rc -eq 0) {
+                        Write-Ok "$desc — frontendi sõltuvused laaditud"
+                    } else {
+                        Add-Fail "$desc — frontendi sõltuvuste eellaadimine ebaõnnestus (esimene käivitus laeb need ise; logi: $log)" ''
+                        $ok = $false
+                    }
+                }
+            }
+        }
+
+        # Backend: gradlew dependencies warms the Gradle + Maven Central
+        # caches in ~/.gradle. Idempotent (re-run is quick when cached).
+        $backend = Join-Path $dir 'backend'
+        if (Test-Path (Join-Path $backend 'gradlew.bat')) {
+            $jdk = Find-Jdk21
+            if (-not $jdk) {
+                Add-Fail "$desc — Java 21 puudub, backendi sõltuvusi ei saanud ette laadida (esimene käivitus laeb need ise)" ''
+                $ok = $false
+            } else {
+                Write-Info 'Laen backendi sõltuvused (Gradle — võib võtta mitu minutit)...'
+                # Point gradlew at the found JDK explicitly: a fresh Temurin
+                # is not on this session's PATH and JAVA_HOME may be unset.
+                $oldJavaHome = $env:JAVA_HOME
+                $env:JAVA_HOME = Split-Path (Split-Path $jdk.FullName)
+                Push-Location $backend
+                & .\gradlew.bat --no-daemon dependencies *>> $log
+                $rc = $LASTEXITCODE
+                Pop-Location
+                $env:JAVA_HOME = $oldJavaHome
+                if ($rc -eq 0) {
+                    Write-Ok "$desc — backendi sõltuvused laaditud"
+                } else {
+                    Add-Fail "$desc — backendi sõltuvuste eellaadimine ebaõnnestus (esimene käivitus laeb need ise; logi: $log)" ''
+                    $ok = $false
+                }
+            }
+        }
+
+        if ($ok) {
+            Write-Ok "$desc on valmis: $dir"
+            Add-Ok "$desc — $dir (ava see kaust IntelliJ-s)"
+        }
+    }
+}
+
 # --- summary -----------------------------------------------------------------
 
 # Static manual steps from config + dynamic ones discovered during the run.
@@ -731,6 +886,7 @@ $user = Resolve-DistroUser $target
 Grant-PasswordlessSudo $target $user
 Install-InstallerFiles $target $user
 Invoke-Installer $target $user
+Invoke-CourseSetup
 Show-Summary $target
 Write-HtmlSummary $target
 

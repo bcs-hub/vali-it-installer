@@ -76,15 +76,24 @@ directly.
   to the desktop as `Vali-IT-kokkuvote.html` (opened in the browser; includes DB
   connection details) — the console version dies with the window. Guide links use
   `?raw=true` so GitHub serves the PDF as a direct download.
-- Student guide PDFs live in `docs/install/` (001-Slack … 023-Kursuse-projekti-kaivitamine;
+- Student guide PDFs live in `docs/install/` (001-Slack … 024-Java-JDK-21;
   several are generated placeholders awaiting the instructor's real screenshots). When
   renumbering, update every reference in setup.ps1 + configs + README and verify each
   referenced file exists on disk.
-- PLANNED, not built (details in docs/ARCHITECTURE.md "Tulevikuplaan"): course-repo
-  preload step — winget JDK (Temurin 21), clone the public course repo (backend Spring
-  Boot + frontend Vue3/Vite) under `%USERPROFILE%\vali-it\`, run `npm ci` +
-  `gradlew dependencies` (no build, no server start — students start servers in IntelliJ,
-  PDF 023). Requires the course repo to exist first.
+- Course-repo preload (last setup.ps1 step, `Invoke-CourseSetup`): `config/course.conf`
+  (`repo-url | folder under %USERPROFILE% | desc`; folder name derives from the URL's
+  last segment) → clone to `%USERPROFILE%\vali-it\<repo>` (existing folder = student's
+  work, clone skipped; preload still runs — it only writes caches), then `npm ci` in
+  frontend (skipped when node_modules exists; requires committed package-lock.json) and
+  `gradlew.bat dependencies` in backend (requires committed gradlew.bat). All best-effort:
+  failures → Fail list, first build downloads deps itself. Temurin 21 installs via winget
+  with `--override '/quiet ADDLOCAL=FeatureMain,FeatureEnvironment,FeatureJavaHome'`
+  (PATH + JAVA_HOME); its conf check command is `-` on purpose — an old PATH `java` must
+  not count as JDK 21; presence comes from `Find-Jdk21` (Adoptium/Oracle/Microsoft globs).
+  Freshly installed tools are not on the running session's PATH → `Find-GitExe`/
+  `Find-NpmCmd`/`Find-Jdk21` fallbacks, JAVA_HOME passed explicitly to gradlew. No build,
+  no server start — students start servers in IntelliJ (PDF 023, in manual-steps.conf).
+  npm/gradle output goes to `%TEMP%\vali-it-course.log`.
 - NVM is a shell function, not a binary: `lib/checks.sh::load_nvm` sources it explicitly
   (with `set -u` relaxed — nvm.sh is not set-u clean). Always use `tool_available`, not
   bare `command -v`, when checking tools: it loads NVM first AND rejects `/mnt/*` hits

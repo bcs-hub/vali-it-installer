@@ -14,10 +14,12 @@ põhjendused. Kinnitatud 2026-07-15.
 │  KIHT 1: setup.ps1  (Windows)               │
 │  1. Windowsi rakendused (winget):           │
 │     Git, Node, PostgreSQL(+vali_it DB),     │
-│     IntelliJ (+pluginad+seaded), Docker,    │
-│     Slack, Zoom                             │
+│     Java 21 (Temurin), IntelliJ             │
+│     (+pluginad+seaded), Docker, Slack, Zoom │
 │  2. WSL2 + Ubuntu, kasutaja, paroolita sudo │
-│  3. Kokkuvõte (✓ / ✗+PDF / käsitsi+PDF):    │
+│  3. Kursuse projekt: kloon + sõltuvuste     │
+│     eellaadimine (npm ci, gradlew deps)     │
+│  4. Kokkuvõte (✓ / ✗+PDF / käsitsi+PDF):    │
 │     ekraanil + HTML-failina töölaual        │
 └─────────────────────────────────────────────┘
     │  wsl -d <distro> -- ./install.sh --all
@@ -50,6 +52,8 @@ Linuxi poole testitavaks ilma Windowsita.
 | Kokkuvõte salvestatakse ka HTML-ina töölauale (`Vali-IT-kokkuvote.html`) ja avatakse brauseris | Konsool kaob akna sulgemisel ja lingid pole igas konsoolis klõpsatavad; HTML on püsiv, klikitav, õpetajale saadetav ning sisaldab andmebaasi ühendusandmeid |
 | PDF-lingid kujul `...pdf?raw=true` | GitHub serveerib faili otse allalaadimisena — õpilane ei pea blob-lehelt nuppu otsima |
 | IntelliJ tuvastus `idea64.exe` asukoha järgi (Find-IdeaExe) | Toolboxi paigaldusi winget ID järgi ei näe; otsitakse Program Files + LocalAppData + Toolbox, uusim versioon võidab. Pluginaid ei paigaldata, kui IDE parasjagu töötab (headless-paigaldus ebaõnnestuks) — selle asemel käsitsi-samm |
+| Temurin JDK 21 winget'iga; MSI override paneb PATH-i JA `JAVA_HOME`-i (`ADDLOCAL=...FeatureJavaHome`) | Kõik kolm tarbijat kaetud: gradlew (PATH/JAVA_HOME), IntelliJ (auto-detect Program Files'ist), õpilase terminal. Olemasolu tuvastab `Find-Jdk21` (Adoptium/Oracle/Microsoft globid, uusim võidab) — confi kontrollkäsk on `-` meelega, sest PATH-il olev vana `java` (nt Java 8) ei tohi JDK 21-na arvesse minna |
+| Kursuse projekt (`course.conf`) kloonitakse ainult puuduvasse kausta; sõltuvuste eellaadimine on best-effort | Olemasolev kaust on õpilase töö ja jääb puutumata (eellaadimine jookseb siiski — kirjutab ainult cache'e, nii toimib ka katkenud jooksu jätkamine). Eellaadimise ebaõnnestumine pole kriitiline: esimene build laeb sõltuvused ise; serverite käivitamine jääb õpilasele IntelliJ-s (PDF 023). Värskelt paigaldatud git/npm/JDK pole jooksva sessiooni PATH-il → `Find-GitExe`/`Find-NpmCmd`/`Find-Jdk21` + explicit `JAVA_HOME` lapsprotsessile |
 | Vea korral menüü jätkab | Üks ebaõnnestunud samm raporteeritakse eestikeelselt; sammud jooksevad alamprotsessidena (`run_step`) |
 | Olemasolevat distrot EI kustutata kunagi | Automaatika ei tohi kellegi andmeid hävitada; katkise distro puhul suuname õpetaja juurde |
 | Olemasolev 22.04/24.04 võetakse kasutusele | Sellepärast toetabki installer mõlemat versiooni; mõlema olemasolul küsitakse (24.04 soovitatud), `$env:ITC_DISTRO` valib käsitsi |
@@ -102,6 +106,7 @@ poolel, et neid lugeda):
 | `config/windows-apps.conf` | `winget-id \| kontrollkäsk \| kirjeldus \| PDF` | winget-mootor; olemas = winget tunneb ID VÕI kontrollkäsk on PATH-is (katab käsitsi paigaldatud versioonid); PDF on käsitsi varutee kokkuvõttes |
 | `config/intellij-plugins.conf` | `plugin-id \| nimi \| PDF` | headless `idea64.exe installPlugins` |
 | `config/manual-steps.conf` | `tekst \| PDF` | kokkuvõtte "Tee ise läbi" nimekiri |
+| `config/course.conf` | `repo-url \| kaust %USERPROFILE% all \| kirjeldus` | kursuse projekti kloon + sõltuvuste eellaadimine (Invoke-CourseSetup); kaustanimi tuletatakse URL-i viimasest osast |
 
 ### Veakäsitlus
 
@@ -133,30 +138,39 @@ funktsiooni, nii et nad ei saa omavahel eri meelt olla.
 Kõik spekis loetletud tulevikuplaanid mahuvad nendesse mustritesse ilma
 refaktoorimiseta.
 
-## Tulevikuplaan: kursuse projekti eellaadimine
+## Kursuse projekti eellaadimine
 
-Kokku lepitud (2026-07-15), aga veel tegemata — eeldab kursuse repo
-olemasolu. Viimase sammuna setup.ps1-s:
+Viimane samm setup.ps1-s (`Invoke-CourseSetup`, pärast Ubuntu osa, enne
+kokkuvõtet). Loeb `config/course.conf` (uus kursus = URL-i vahetus:
+bank41 → bank42 → ...); iga rea kohta:
 
-1. **JDK Windowsi poolele** — üks rida `windows-apps.conf`-i (Temurin 21,
-   sama major kui WSL-is); vajalik nii Gradle'ile kui IntelliJ-le.
-2. **Kloonimine** — avalik kursuse repo (kaustad `backend` = Spring Boot
-   Gradle, `frontend` = Vue 3 + Vite) standardsesse kohta, nt
-   `%USERPROFILE%\vali-it\`. Kui kaust on juba olemas, EI puututa
-   (õpilase töö!). Repo URL + sihtkaust lähevad uude confi
-   (`config/course.conf`).
-3. **Sõltuvuste eellaadimine** — `npm ci` frontend'is (node_modules
-   valmis) ja `gradlew.bat dependencies` backend'is (Gradle ise + Maven
-   Centrali sõltuvused cache'i). Eesmärk: klassis ei oota keegi
-   allalaadimisi. Buildi/teste EI jooksutata.
+1. **JDK on Windowsi rakenduste nimekirjas** — Temurin 21 (sama major
+   kui WSL-is) rida `windows-apps.conf`-is; MSI override lisab PATH-i ja
+   `JAVA_HOME`-i. Vajalik nii Gradle'ile kui IntelliJ-le.
+2. **Kloonimine** — repo (kaustad `backend` = Spring Boot Gradle,
+   `frontend` = Vue 3 + Vite) kausta `%USERPROFILE%\vali-it\<reponimi>`.
+   Kui kaust on juba olemas, EI puututa (õpilase töö!) — kloon jääb
+   vahele, aga eellaadimine jookseb (kirjutab ainult cache'e; nii toimib
+   ka katkenud jooksu jätkamine).
+3. **Sõltuvuste eellaadimine** — `npm ci` frontend'is (vahele, kui
+   node_modules on juba olemas) ja `gradlew.bat dependencies` backend'is
+   (Gradle ise + Maven Centrali sõltuvused cache'i; JAVA_HOME antakse
+   lapsprotsessile explicit'selt `Find-Jdk21` kaudu). Eesmärk: klassis
+   ei oota keegi allalaadimisi. Buildi/teste EI jooksutata. npm/gradle
+   väljund läheb faili `%TEMP%\vali-it-course.log`, mitte ekraanile.
+   Iga ebaõnnestumine on best-effort Fail-kirje — esimene build laeb
+   sõltuvused ise, installer ei katke.
 4. **Servereid EI käivita installer** — õpilane käivitab need ise
    IntelliJ-s esimeses tunnis; juhend on PDF 023
    (`023-Kursuse-projekti-kaivitamine-IntelliJ.pdf`, praegu placeholder)
-   ja see läheb siis `manual-steps.conf`-i.
+   ja see on `manual-steps.conf`-is. Kokkuvõttes kuvatakse projekti
+   kaustatee, mille õpilane IntelliJ-s avab.
 
 Nõuded kursuse repole: DB-vaba `/hello` endpoint (`http://localhost:8080/hello`),
 `server.address=localhost` application.properties'es (väldib Windowsi
-tulemüüri dialoogi), `package-lock.json` olemas (`npm ci` jaoks).
+tulemüüri dialoogi), `package-lock.json` olemas (`npm ci` jaoks),
+`gradlew.bat` + Gradle wrapper committituna (installer ei paigalda
+Gradle'it eraldi).
 
 ## Testimine
 

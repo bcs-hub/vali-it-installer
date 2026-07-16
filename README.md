@@ -32,6 +32,7 @@ Sama kokkuvõte salvestatakse töölauale failina **Vali-IT-kokkuvote.html**
 | Git | versioonihaldus |
 | Node.js LTS | JavaScripti käivituskeskkond |
 | PostgreSQL 17 | andmebaasiserver (+ kursuse andmebaas `vali_it`) |
+| Java 21 (Temurin JDK) | Java arenduskeskkond (Gradle ja IntelliJ jaoks) |
 | IntelliJ IDEA | arenduskeskkond (+ pluginad ja seaded) |
 | Docker Desktop | konteinerid |
 | Slack | kursuse suhtlus |
@@ -58,6 +59,19 @@ Värskel paigaldusel luuakse kursuse andmebaas järgmiste andmetega
 Olemasolevat PostgreSQL-i serverit ei muudeta — sel juhul jääb
 andmebaasi loomine käsitsi sammuks (juhend kokkuvõttes).
 
+### Kursuse projekt
+
+Kõige lõpus kloonib installer kursuse projekti (loend:
+[`config/course.conf`](config/course.conf)) kausta
+`%USERPROFILE%\vali-it\` ja laadib sõltuvused ette (frontend: `npm ci`,
+backend: `gradlew dependencies`), et klassis ei ootaks keegi
+allalaadimisi. Servereid installer ei käivita — seda teeb õpilane ise
+IntelliJ-s (juhend
+[023](docs/install/023-Kursuse-projekti-kaivitamine-IntelliJ.pdf)).
+Olemasolevat projektikausta ei puututa kunagi; kokkuvõttes kuvatakse
+kaustatee, mille õpilane IntelliJ-s avab. Uue kursuse jaoks piisab
+repo-URL-i muutmisest `course.conf`-is (bank41 → bank42 → ...).
+
 ## Käsitsi sammud pärast paigaldust
 
 Neid ei saa automatiseerida; installer kuvab sama nimekirja kokkuvõttes
@@ -67,7 +81,8 @@ Neid ei saa automatiseerida; installer kuvab sama nimekirja kokkuvõttes
 2. [Docker Desktopi esmane käivitamine](docs/install/019-Docker-Desktopi-esmane-kaivitamine.pdf)
 3. [GitHubi konto ja gh sisselogimine](docs/install/021-GitHub-konto-ja-gh-sisselogimine.pdf)
 4. [Claude Code'i esimene käivitamine](docs/install/022-Claude-Code-esimene-kaivitamine.pdf)
-5. [Terminali vaikeshelli määramine](docs/install/014-Terminali-default-shell-i-maaramine-WSL-Ubuntu.pdf) (soovi korral)
+5. [Kursuse projekti käivitamine IntelliJ-s](docs/install/023-Kursuse-projekti-kaivitamine-IntelliJ.pdf)
+6. [Terminali vaikeshelli määramine](docs/install/014-Terminali-default-shell-i-maaramine-WSL-Ubuntu.pdf) (soovi korral)
 
 Kõik sammsammulised juhendid on kaustas [`docs/install/`](docs/install/).
 
@@ -117,6 +132,7 @@ docs/ARCHITECTURE.md arhitektuur ja disainiotsused
   (winget-id + kontrollkäsk + PDF-viide käsitsi varuteeks)
 - **IntelliJ plugin:** üks rida faili `config/intellij-plugins.conf`
 - **käsitsi samm:** üks rida faili `config/manual-steps.conf`
+- **kursuse repo vahetus:** muuda URL-i failis `config/course.conf`
 
 ### Testimine
 
@@ -141,18 +157,6 @@ testitakse päris masinal.
 WSL-i eripärade testimiseks päris masinal ("värske õpilase" seis) vt
 [docs/UBUNTU-CLEAN-INSTALL.md](docs/UBUNTU-CLEAN-INSTALL.md) — Ubuntu
 puhas kustutamine ja taaspaigaldus.
-
-### Plaanis
-
-**Kursuse projekti eellaadimine** (vt täpsemalt
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)): installer kloonib kursuse
-avaliku repo (`backend` = Spring Boot, `frontend` = Vue 3) ja laadib
-sõltuvused ette (`gradlew dependencies`, `npm ci`), et klassis ei ootaks
-keegi allalaadimisi. Servereid installer ei käivita — õpilane teeb seda
-ise IntelliJ-s (juhend:
-[023](docs/install/023-Kursuse-projekti-kaivitamine-IntelliJ.pdf)).
-Eeldab JDK lisamist Windowsi rakenduste nimekirja ja kursuse repo
-valmimist.
 
 ## Tõrkeotsing
 
