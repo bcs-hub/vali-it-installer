@@ -315,11 +315,11 @@ function Invoke-IdeaSetup {
     # Headless plugin install cannot work while the IDE itself is running.
     if (Get-Process -Name idea64 -ErrorAction SilentlyContinue) {
         $pluginNames = @($plugins | ForEach-Object { $_.F2 }) -join ', '
-        $otherPdfs = @($plugins | Select-Object -Skip 1 | ForEach-Object { Get-DocUrl $_.F3 }) -join ' ja '
+        $guideLines = @($plugins | ForEach-Object { "$($_.F2): $(Get-DocUrl $_.F3)" })
         Write-Warn 'IntelliJ on praegu avatud — pluginaid ei saa paigaldada, kui IntelliJ töötab.'
         Add-Manual "IntelliJ pluginad ($pluginNames): IntelliJ oli paigalduse ajal avatud. Sulge IntelliJ ja käivita installer uuesti — siis paigalduvad pluginad automaatselt" `
-            $plugins[0].F3 `
-            $(if ($otherPdfs) { "Käsitsi paigalduse juhendid: $otherPdfs" } else { '' })
+            '' `
+            ("Käsitsi paigalduse juhendid:`n" + ($guideLines -join "`n"))
         return
     }
 
@@ -614,6 +614,7 @@ function Write-HtmlSummary([string]$DistroName) {
                 if ($m.Pdf) { $li += " — <a href='$(Get-DocUrl $m.Pdf)'>juhend (PDF)</a>" }
                 if ($m.Extra) {
                     $extraHtml = (ConvertTo-HtmlText $m.Extra) -replace '(https?://\S+)', '<a href="$1">$1</a>'
+                    $extraHtml = $extraHtml -replace "`n", '<br>'
                     $li += "<br><span class='lisainfo'>$extraHtml</span>"
                 }
                 $h += "$li</li>"
@@ -686,7 +687,11 @@ function Show-Summary([string]$DistroName) {
             $j++
             Write-Host "  $j. $($m.Name)" -ForegroundColor Yellow
             if ($m.Pdf) { Write-Host "      Juhend: $(Get-DocUrl $m.Pdf)" -ForegroundColor Yellow }
-            if ($m.Extra) { Write-Host "      $($m.Extra)" -ForegroundColor Yellow }
+            if ($m.Extra) {
+                foreach ($extraLine in ($m.Extra -split "`n")) {
+                    Write-Host "      $extraLine" -ForegroundColor Yellow
+                }
+            }
         }
     }
 
