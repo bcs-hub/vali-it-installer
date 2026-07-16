@@ -69,8 +69,10 @@ allalaadimisi. Servereid installer ei käivita — seda teeb õpilane ise
 IntelliJ-s (juhend
 [023](docs/install/023-Kursuse-projekti-kaivitamine-IntelliJ.pdf)).
 Olemasolevat projektikausta ei puututa kunagi; kokkuvõttes kuvatakse
-kaustatee, mille õpilane IntelliJ-s avab. Uue kursuse jaoks piisab
-repo-URL-i muutmisest `course.conf`-is (bank41 → bank42 → ...).
+kaustatee, mille õpilane IntelliJ-s avab, ja õnnestumisel lisandub
+"Tee ise läbi" nimekirja serverite käivitamise samm (juhend
+[025](docs/install/025-Serverite-kaivitamine-IntelliJ.pdf)). Uue kursuse
+jaoks piisab repo-URL-i muutmisest `course.conf`-is (bank41 → bank42 → ...).
 
 ## Käsitsi sammud pärast paigaldust
 

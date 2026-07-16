@@ -702,6 +702,11 @@ function Invoke-CourseSetup {
         if ($ok) {
             Write-Ok "$desc on valmis: $dir"
             Add-Ok "$desc — $dir (ava see kaust IntelliJ-s)"
+            # Dynamic on purpose (not manual-steps.conf): "start the servers"
+            # only makes sense when the project actually landed on disk.
+            Add-Manual "$($desc): käivita serverid IntelliJ-s (backend + frontend)" `
+                'docs/install/025-Serverite-kaivitamine-IntelliJ.pdf' `
+                "Ava IntelliJ-s kaust: $dir"
         }
     }
 }

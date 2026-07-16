@@ -76,7 +76,7 @@ directly.
   to the desktop as `Vali-IT-kokkuvote.html` (opened in the browser; includes DB
   connection details) — the console version dies with the window. Guide links use
   `?raw=true` so GitHub serves the PDF as a direct download.
-- Student guide PDFs live in `docs/install/` (001-Slack … 024-Java-JDK-21;
+- Student guide PDFs live in `docs/install/` (001-Slack … 025-Serverite-kaivitamine;
   several are generated placeholders awaiting the instructor's real screenshots). When
   renumbering, update every reference in setup.ps1 + configs + README and verify each
   referenced file exists on disk.
@@ -92,8 +92,10 @@ directly.
   not count as JDK 21; presence comes from `Find-Jdk21` (Adoptium/Oracle/Microsoft globs).
   Freshly installed tools are not on the running session's PATH → `Find-GitExe`/
   `Find-NpmCmd`/`Find-Jdk21` fallbacks, JAVA_HOME passed explicitly to gradlew. No build,
-  no server start — students start servers in IntelliJ (PDF 023, in manual-steps.conf).
-  npm/gradle output goes to `%TEMP%\vali-it-course.log`.
+  no server start — students start servers in IntelliJ (PDF 023, in manual-steps.conf;
+  plus a dynamic Add-Manual "start the servers" step with PDF 025 and the folder path,
+  added only when the preload fully succeeded). npm/gradle output goes to
+  `%TEMP%\vali-it-course.log`.
 - NVM is a shell function, not a binary: `lib/checks.sh::load_nvm` sources it explicitly
   (with `set -u` relaxed — nvm.sh is not set-u clean). Always use `tool_available`, not
   bare `command -v`, when checking tools: it loads NVM first AND rejects `/mnt/*` hits

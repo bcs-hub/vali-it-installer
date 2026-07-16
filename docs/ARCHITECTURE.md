@@ -164,7 +164,10 @@ bank41 → bank42 → ...); iga rea kohta:
    IntelliJ-s esimeses tunnis; juhend on PDF 023
    (`023-Kursuse-projekti-kaivitamine-IntelliJ.pdf`, praegu placeholder)
    ja see on `manual-steps.conf`-is. Kokkuvõttes kuvatakse projekti
-   kaustatee, mille õpilane IntelliJ-s avab.
+   kaustatee, mille õpilane IntelliJ-s avab. Kui eellaadimine täielikult
+   õnnestus, lisandub dünaamiline käsitsi-samm "käivita serverid" (PDF
+   025 + kaustatee) — dünaamiline meelega, sest samm on mõttekas ainult
+   siis, kui projekt on päriselt kettal.
 
 Nõuded kursuse repole: DB-vaba `/hello` endpoint (`http://localhost:8080/hello`),
 `server.address=localhost` application.properties'es (väldib Windowsi
