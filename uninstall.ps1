@@ -394,6 +394,26 @@ if ($Purge) {
     }
 }
 
+# The course-folder question comes BEFORE the plan is shown, so the list
+# the user confirms is exactly what will happen. Default (plain Enter)
+# keeps the folder — it may hold the student's own work. ('-eq'/'-ne' are
+# case-insensitive on purpose: jah/Jah/JAH all count.)
+if (-not $AutoYes -and $planCourse.Count -gt 0) {
+    # Stray keystrokes from earlier must not answer the prompt.
+    try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
+    Write-Host ''
+    $q = 'Kas kustutada ka kursuse projektikaust (' + ($planCourse -join ', ') +
+        ')? Kirjuta "jah" kustutamiseks või vajuta lihtsalt Enter, et kaust alles jätta'
+    $a = Read-Host $q
+    if ($a -eq 'jah') {
+        Write-Warn 'Kursuse projektikaust kustutatakse koos ülejäänuga.'
+    } else {
+        Write-Info 'Kursuse projektikaust jääb alles.'
+        $planCourse = @()
+    }
+    Write-Host ''
+}
+
 Write-Info 'Eemaldatakse:'
 foreach ($a in $planApps) { Write-Host "  - Rakendus: $($a.Label)" }
 if ($planDb) { Write-Host "  - PostgreSQL andmebaas: $DbName" }
@@ -405,26 +425,13 @@ Write-Host '  - Installeri jäljed: töölaua kokkuvõte, ajutised failid, manif
 Write-Host ''
 
 if (-not $AutoYes) {
-    # Stray keystrokes from earlier must not answer the prompts.
     try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
-
-    # The course folder is the only place that can hold the student's own
-    # work — it gets its own question, and the default is to keep it.
-    # ('-ne' is case-insensitive on purpose: jah/Jah/JAH all count.)
-    if ($planCourse.Count -gt 0) {
-        Write-Host ''
-        $a = Read-Host 'Kas kustutada ka kursuse projektikaust? Kirjuta "jah" kustutamiseks või vajuta lihtsalt Enter, et kaust alles jätta'
-        if ($a -ne 'jah') {
-            Write-Info 'Kursuse projektikaust jääb alles.'
-            $planCourse = @()
-        }
-    }
-
-    $answer = Read-Host 'Kas oled kindel? Kirjuta "jah" ja vajuta Enter'
+    $answer = Read-Host 'Kas eemaldan kõik ülaltoodud? Kirjuta "jah" ja vajuta Enter (mis tahes muu vastus katkestab)'
     if ($answer -ne 'jah') {
         Write-Info 'Katkestatud — midagi ei eemaldatud.'
         Stop-Uninstaller 0
     }
+    Write-Info 'Alustan eemaldamisega...'
 }
 Write-Host ''
 
