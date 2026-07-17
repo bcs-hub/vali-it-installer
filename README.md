@@ -135,7 +135,8 @@ docs/ARCHITECTURE.md arhitektuur ja disainiotsused
 - **eriloogikaga tööriist (Ubuntu):** rida faili `config/ai-tools.conf` +
   funktsioon `install_tool_<id>` failis `lib/installer.sh`
 - **Windowsi rakendus:** üks rida faili `config/windows-apps.conf`
-  (winget-id + kontrollkäsk + PDF-viide käsitsi varuteeks)
+  (winget-id + kontrollkäsk + kirjeldus + PDF-viide käsitsi varuteeks +
+  valikuline aja-vihje, mis asendab paigalduse ajal tavateate)
 - **IntelliJ plugin:** üks rida faili `config/intellij-plugins.conf`
 - **käsitsi samm:** üks rida faili `config/manual-steps.conf`
 - **kursuse repo vahetus:** muuda URL-i failis `config/course.conf`
@@ -191,6 +192,21 @@ $env:ITC_PURGE = '1'   # TÄIELIK lähtestamine: eemalda ka kõik manifestist
 
 NB! Ubuntu distro ja kursuse projektikausta kustutamine hävitab kõik neis
 olevad failid — eemaldaja hoiatab selle eest nimekirjas eraldi.
+
+Eemaldamise ajal:
+
+- Rakenduste eemaldamise tehniline väljund (nt Docker Desktopi pikk logi)
+  läheb ekraani asemel faili `%TEMP%\vali-it-uninstall.log`; ekraanil on
+  ainult rahulik rida ja kestus. Kokkuvõte salvestatakse töölauale failina
+  **Vali-IT-eemaldamise-kokkuvote.html**.
+- Docker Desktopi eemaldamine võib võtta mitu minutit — eemaldaja hoiatab
+  selle eest ega ole hangunud.
+- Kasutaja-skoobis paigaldatud rakendusi (nt Slack, Zoom) ei saa alati
+  administraatori-õigustes eemaldada; eemaldaja proovib automaatselt ka
+  `--scope user` varianti ja kui seegi ei õnnestu, annab kokkuvõttes selge
+  juhise (Seaded → Rakendused → Installitud rakendused).
+- Kui midagi jääb eemaldamata, jäävad need kirjed manifesti alles — sama
+  käsu kordamine proovib ainult neid uuesti.
 
 ## Tõrkeotsing
 
