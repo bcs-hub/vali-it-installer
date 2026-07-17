@@ -56,6 +56,11 @@ $script:RepoTar = ''
 $script:RepoDir = ''
 $script:WslAbort = $null   # set by Stop-WslPart, read by the main-flow catch
 $script:RunTimer = [System.Diagnostics.Stopwatch]::StartNew()   # whole-run duration
+# True when THIS run installed a Windows app: a freshly installed Docker
+# Desktop needs a logout/restart (docker-users group membership) before its
+# first launch, so the summary then recommends one restart. A re-run where
+# everything already existed does not.
+$script:AppsInstalledNow = $false
 
 # Make wsl.exe output plain UTF-8 instead of UTF-16 so it can be parsed.
 $env:WSL_UTF8 = '1'
@@ -429,6 +434,7 @@ function Install-WindowsApps {
             Write-Ok "[$i/$n] $($a.F3) — paigaldatud$durText"
             Add-Ok "$($a.F3)$durText"
             Add-StateEntry 'app' $a.F1 $r.Duration
+            $script:AppsInstalledNow = $true
         } else {
             Write-Err "[$i/$n] $($a.F3) — paigaldamine ebaõnnestus"
             Add-Fail $a.F3 $a.F4
@@ -1016,6 +1022,10 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm') · Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)</p>"
         $h += "<p class='teade'>See kokkuvõte on salvestatud faili <code>$(ConvertTo-HtmlText $path)</code> — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>"
         $h += '<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>'
+        if ($script:AppsInstalledNow) {
+            $h += ('<p class="vihje"><b>Soovitus:</b> taaskäivita arvuti üks kord, enne kui hakkad programme ' +
+                'kasutama — näiteks Docker Desktop hakkab korralikult tööle alles pärast taaskäivitust.</p>')
+        }
 
         if ($script:OkList.Count -gt 0) {
             $h += '<h2 class="ok">Korras</h2><ul>'
@@ -1158,6 +1168,11 @@ function Show-Summary([string]$DistroName) {
     Write-Host ''
     Write-Info "Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)"
     Write-Host ''
+    if ($script:AppsInstalledNow) {
+        Write-Warn ('Soovitus: taaskäivita arvuti üks kord, enne kui hakkad programme kasutama — ' +
+            'näiteks Docker Desktop hakkab korralikult tööle alles pärast taaskäivitust.')
+        Write-Host ''
+    }
     if ($DistroName) {
         Write-Info "Ubuntu avamiseks kirjuta terminali:  wsl -d $DistroName"
         Write-Info 'või otsi Start-menüüst "Ubuntu".'
