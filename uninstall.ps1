@@ -308,6 +308,7 @@ function Write-UninstallHtml {
         $h += '</style></head><body>'
         $h += '<h1>Vali-IT eemaldamise kokkuvõte</h1>'
         $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm') · Kogu eemaldamine kestis: $(Format-Duration $script:RunTimer.Elapsed)</p>"
+        $h += "<p>See kokkuvõte on salvestatud faili <code>$(ConvertTo-HtmlText $path)</code>.</p>"
 
         if ($script:DoneList.Count -gt 0) {
             $h += '<h2 class="ok">Eemaldatud</h2><ul>'
@@ -326,7 +327,10 @@ function Write-UninstallHtml {
         $h += '</body></html>'
 
         ($h -join "`n") | Out-File -FilePath $path -Encoding UTF8
-        Write-Ok 'Kokkuvõte salvestati töölauale: Vali-IT-eemaldamise-kokkuvote.html'
+        # Full path on purpose: with OneDrive folder redirection or a UAC
+        # elevation under another account, "the desktop" may not be the
+        # desktop the user is looking at.
+        Write-Ok "Kokkuvõte salvestati faili: $path"
         Start-Process $path
     } catch {
         Write-Warn 'Kokkuvõtte salvestamine töölauale ebaõnnestus.'

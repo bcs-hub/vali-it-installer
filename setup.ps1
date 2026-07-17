@@ -987,7 +987,7 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += '</style></head><body>'
         $h += '<h1>Vali-IT paigalduse kokkuvõte</h1>'
         $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm') · Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)</p>"
-        $h += '<p class="teade">See kokkuvõte on salvestatud sinu töölauale failina Vali-IT-kokkuvote.html — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>'
+        $h += "<p class='teade'>See kokkuvõte on salvestatud faili <code>$(ConvertTo-HtmlText $path)</code> — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>"
         $h += '<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>'
 
         if ($script:OkList.Count -gt 0) {
@@ -1056,7 +1056,10 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += '</body></html>'
 
         ($h -join "`n") | Out-File -FilePath $path -Encoding UTF8
-        Write-Ok "Kokkuvõte salvestati töölauale: Vali-IT-kokkuvote.html"
+        # Full path on purpose: with OneDrive folder redirection or a UAC
+        # elevation under another account, "the desktop" may not be the
+        # desktop the user is looking at.
+        Write-Ok "Kokkuvõte salvestati faili: $path"
         Start-Process $path
     } catch {
         Write-Warn 'Kokkuvõtte salvestamine töölauale ebaõnnestus.'
