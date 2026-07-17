@@ -44,6 +44,16 @@ $script:FailCount = 0
 $env:WSL_UTF8 = '1'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
+# Everything on screen also goes to a log file, so an error can still be
+# read after the window has closed (best-effort — a failed transcript must
+# not stop the uninstall).
+$LogFile = Join-Path $env:TEMP 'vali-it-uninstall.log'
+$script:LogStarted = $false
+try {
+    Start-Transcript -Path $LogFile -Force *> $null
+    $script:LogStarted = $true
+} catch { }
+
 function Write-Info([string]$m) { Write-Host $m -ForegroundColor Cyan }
 function Write-Ok([string]$m) { Write-Host "✓ $m" -ForegroundColor Green }
 function Write-Warn([string]$m) { Write-Host "! $m" -ForegroundColor Yellow }
@@ -53,6 +63,16 @@ function Write-Err([string]$m) { Write-Host "✗ $m" -ForegroundColor Red }
 # window before anything can be read — always pause first.
 function Stop-Uninstaller([int]$Code) {
     Write-Host ''
+    if ($script:LogStarted) {
+        try { Stop-Transcript *> $null } catch { }
+        $script:LogStarted = $false
+        Write-Info "Kogu väljund on salvestatud faili: $LogFile"
+        Write-Host ''
+    }
+    # Keystrokes pressed while the removals ran sit in the console input
+    # buffer and would answer this Read-Host instantly, closing the window
+    # before anything can be read — flush them first.
+    try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
     Read-Host 'Vajuta Enter, et lõpetada (aken läheb kinni)' | Out-Null
     exit $Code
 }

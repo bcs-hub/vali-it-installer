@@ -56,6 +56,24 @@ $script:WslAbort = $null   # set by Stop-WslPart, read by the main-flow catch
 $env:WSL_UTF8 = '1'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
 
+# Everything on screen also goes to a log file, so an error can still be
+# read after the window has closed (best-effort — a failed transcript must
+# not stop the install).
+$SetupLogFile = Join-Path $env:TEMP 'vali-it-setup.log'
+$script:LogStarted = $false
+try {
+    Start-Transcript -Path $SetupLogFile -Force *> $null
+    $script:LogStarted = $true
+} catch { }
+
+function Stop-SetupLog {
+    if ($script:LogStarted) {
+        try { Stop-Transcript *> $null } catch { }
+        $script:LogStarted = $false
+        Write-Host "Kogu väljund on salvestatud faili: $SetupLogFile" -ForegroundColor Cyan
+    }
+}
+
 function Write-Info([string]$m) { Write-Host $m -ForegroundColor Cyan }
 function Write-Ok([string]$m) { Write-Host "✓ $m" -ForegroundColor Green }
 function Write-Warn([string]$m) { Write-Host "! $m" -ForegroundColor Yellow }
@@ -77,6 +95,11 @@ function Get-RawUrl([string]$Path) { "https://raw.githubusercontent.com/$RepoSlu
 # window closes before the student can read anything. Always pause first.
 function Stop-Installer([int]$Code) {
     Write-Host ''
+    Stop-SetupLog
+    # Keystrokes pressed during the long installs sit in the console input
+    # buffer and would answer this Read-Host instantly, closing the window
+    # before anything can be read — flush them first.
+    try { $Host.UI.RawUI.FlushInputBuffer() } catch { }
     Read-Host 'Vajuta Enter, et lõpetada (aken läheb kinni)' | Out-Null
     exit $Code
 }
@@ -1028,4 +1051,5 @@ if ($script:FailList.Count -gt 0) {
 }
 Write-Host '==========================================================' -ForegroundColor Green
 Write-Ok 'Valmis! Sinu arvuti on kursuseks ette valmistatud.'
+Stop-SetupLog
 Write-Host '==========================================================' -ForegroundColor Green
