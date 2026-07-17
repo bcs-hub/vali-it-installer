@@ -40,6 +40,7 @@ $StateFile = Join-Path $StateDir 'installed.txt'
 # file is rewritten at the end with only the remaining (failed) entries.
 $script:RemovedKeys = @()
 $script:FailCount = 0
+$script:RunTimer = [System.Diagnostics.Stopwatch]::StartNew()   # whole-run duration
 
 $env:WSL_UTF8 = '1'
 try { [Console]::OutputEncoding = [Text.Encoding]::UTF8 } catch { }
@@ -77,6 +78,13 @@ function Write-Info([string]$m) { Write-Host $m -ForegroundColor Cyan }
 function Write-Ok([string]$m) { Write-Host "✓ $m" -ForegroundColor Green }
 function Write-Warn([string]$m) { Write-Host "! $m" -ForegroundColor Yellow }
 function Write-Err([string]$m) { Write-Host "✗ $m" -ForegroundColor Red }
+
+function Format-Duration([TimeSpan]$t) {
+    $s = [int][math]::Floor($t.TotalSeconds)
+    if ($s -lt 60) { return "${s}s" }
+    if ($s -lt 3600) { return "$([math]::Floor($s / 60))m $($s % 60)s" }
+    return "$([math]::Floor($s / 3600))h $([math]::Floor(($s % 3600) / 60))m"
+}
 
 # Same reason as in setup.ps1: 'exit' under 'irm | iex' closes the console
 # window before anything can be read — always pause first.
@@ -377,6 +385,7 @@ if (Test-Path $StateFile) {
 }
 
 Write-Host ''
+Write-Info "Kogu eemaldamine kestis: $(Format-Duration $script:RunTimer.Elapsed)"
 if ($script:FailCount -gt 0) {
     Write-Err "Osa asju jäi eemaldamata ($script:FailCount) — vaata punaseid ridu ülal. Ebaõnnestunud kirjed jäid manifesti alles; võid sama käsku uuesti proovida."
     Stop-Uninstaller 1

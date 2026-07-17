@@ -55,6 +55,7 @@ $script:ManualList = @()   # dynamic manual steps discovered during the run
 $script:RepoTar = ''
 $script:RepoDir = ''
 $script:WslAbort = $null   # set by Stop-WslPart, read by the main-flow catch
+$script:RunTimer = [System.Diagnostics.Stopwatch]::StartNew()   # whole-run duration
 
 # Make wsl.exe output plain UTF-8 instead of UTF-16 so it can be parsed.
 $env:WSL_UTF8 = '1'
@@ -109,7 +110,8 @@ function Write-Err([string]$m) { Write-Host "✗ $m" -ForegroundColor Red }
 function Format-Duration([TimeSpan]$t) {
     $s = [int][math]::Floor($t.TotalSeconds)
     if ($s -lt 60) { return "${s}s" }
-    return "$([math]::Floor($s / 60))m $($s % 60)s"
+    if ($s -lt 3600) { return "$([math]::Floor($s / 60))m $($s % 60)s" }
+    return "$([math]::Floor($s / 3600))h $([math]::Floor(($s % 3600) / 60))m"
 }
 
 # Run a slow external command in a background job while ticking the elapsed
@@ -959,7 +961,7 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += 'table{border-collapse:collapse} td{padding:3px 14px 3px 0;vertical-align:top}'
         $h += '</style></head><body>'
         $h += '<h1>Vali-IT paigalduse kokkuvõte</h1>'
-        $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm')</p>"
+        $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm') · Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)</p>"
         $h += '<p class="teade">See kokkuvõte on salvestatud sinu töölauale failina Vali-IT-kokkuvote.html — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>'
         $h += '<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>'
 
@@ -1074,6 +1076,8 @@ function Show-Summary([string]$DistroName) {
         }
     }
 
+    Write-Host ''
+    Write-Info "Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)"
     Write-Host ''
     if ($DistroName) {
         Write-Info "Ubuntu avamiseks kirjuta terminali:  wsl -d $DistroName"
