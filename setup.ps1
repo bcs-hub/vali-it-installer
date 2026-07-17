@@ -35,6 +35,14 @@ $DefaultDistro = 'Ubuntu-24.04'
 $InstallDirName = 'vali-it-installer'
 $DbName = 'vali_it'
 $PgSuperPassword = 'student123'
+$WslGuidePdf = 'docs/install/006-WSL-Ubuntu-install-Windows-masinas.pdf'
+
+# State manifest: records what THIS installer actually installed, as opposed
+# to what was already on the machine. Re-runs use it to say "installed on an
+# earlier run" instead of a confusing warning, and uninstall.ps1 removes ONLY
+# the items recorded here (pre-existing software is never its business).
+$StateDir = Join-Path $env:LOCALAPPDATA 'vali-it'
+$StateFile = Join-Path $StateDir 'installed.txt'
 
 # Result tracking for the final summary.
 $script:OkList = @()
@@ -42,6 +50,7 @@ $script:FailList = @()
 $script:ManualList = @()   # dynamic manual steps discovered during the run
 $script:RepoTar = ''
 $script:RepoDir = ''
+$script:WslAbort = $null   # set by Stop-WslPart, read by the main-flow catch
 
 # Make wsl.exe output plain UTF-8 instead of UTF-16 so it can be parsed.
 $env:WSL_UTF8 = '1'
@@ -77,6 +86,39 @@ function Fail([string]$m) {
     Write-Host ''
     Write-Host 'Kui vajad abi, pöördu õpetaja poole.' -ForegroundColor Yellow
     Stop-Installer 1
+}
+
+# Abort ONLY the WSL/Ubuntu part of the run: record the reason and unwind to
+# the main flow, whose catch adds one fail entry (usually with the WSL guide
+# PDF) and carries on. A WSL problem must not cost the student the summary —
+# the Windows apps are already done by the time we get here.
+function Stop-WslPart([string]$Msg, [string]$Pdf = '', [string]$Extra = '') {
+    $script:WslAbort = [pscustomobject]@{ Msg = $Msg; Pdf = $Pdf; Extra = $Extra }
+    throw 'wsl-abort'
+}
+
+# --- state manifest ----------------------------------------------------------
+
+# Both helpers are best-effort on purpose: a state-file hiccup must never
+# fail an installation step. Lines are 'kind|value|date'.
+function Test-StateEntry([string]$Kind, [string]$Value) {
+    try {
+        if (-not (Test-Path $StateFile)) { return $false }
+        foreach ($line in (Get-Content -Path $StateFile -Encoding UTF8)) {
+            $p = $line -split '\|'
+            if ($p.Count -ge 2 -and $p[0].Trim() -eq $Kind -and $p[1].Trim() -eq $Value) { return $true }
+        }
+    } catch { }
+    return $false
+}
+
+function Add-StateEntry([string]$Kind, [string]$Value) {
+    try {
+        if (Test-StateEntry $Kind $Value) { return }
+        New-Item -ItemType Directory -Path $StateDir -Force | Out-Null
+        "$Kind|$Value|$(Get-Date -Format 'yyyy-MM-dd HH:mm')" |
+            Out-File -FilePath $StateFile -Append -Encoding UTF8
+    } catch { }
 }
 
 # Run a command inside the distro as root. Returns stdout; sets $LASTEXITCODE.
@@ -214,8 +256,16 @@ function Install-WindowsApps {
             $present = $true
         }
         if ($present) {
-            Write-Ok "[$i/$n] $($a.F3) — juba olemas"
-            Add-Ok "$($a.F3) — oli juba olemas"
+            # The state manifest tells "this installer did it earlier" apart
+            # from "was on the machine before us" — without it a re-run would
+            # claim our own install was 'already there', confusing students.
+            if (Test-StateEntry 'app' $a.F1) {
+                Write-Ok "[$i/$n] $($a.F3) — paigaldatud (varasemal käivitusel)"
+                Add-Ok "$($a.F3) — paigaldatud varasemal käivitusel"
+            } else {
+                Write-Ok "[$i/$n] $($a.F3) — juba olemas"
+                Add-Ok "$($a.F3) — oli juba olemas"
+            }
             continue
         }
         Write-Info "[$i/$n] Paigaldan: $($a.F3) (võib võtta mitu minutit)..."
@@ -238,6 +288,7 @@ function Install-WindowsApps {
         if ($LASTEXITCODE -eq 0) {
             Write-Ok "[$i/$n] $($a.F3) — paigaldatud"
             Add-Ok $a.F3
+            Add-StateEntry 'app' $a.F1
         } else {
             Write-Err "[$i/$n] $($a.F3) — paigaldamine ebaõnnestus"
             Add-Fail $a.F3 $a.F4
@@ -261,13 +312,19 @@ function Invoke-PostgresSetup {
         Write-Warn "Ei saanud PostgreSQL serveriga ühendust (kas parool pole '$PgSuperPassword'?). Loo andmebaas käsitsi."
         Add-Fail "PostgreSQL andmebaas '$DbName' (server olemas, aga ühendus ebaõnnestus)" 'docs/install/009-Create-new-database-in-PostgreSQL.pdf'
     } elseif ("$exists".Trim() -eq '1') {
-        Write-Ok "Andmebaas '$DbName' — juba olemas"
-        Add-Ok "PostgreSQL andmebaas '$DbName' — oli juba olemas"
+        if (Test-StateEntry 'db' $DbName) {
+            Write-Ok "Andmebaas '$DbName' — loodud (varasemal käivitusel)"
+            Add-Ok "PostgreSQL andmebaas '$DbName' — loodud varasemal käivitusel"
+        } else {
+            Write-Ok "Andmebaas '$DbName' — juba olemas"
+            Add-Ok "PostgreSQL andmebaas '$DbName' — oli juba olemas"
+        }
     } else {
         & $psql.FullName -h localhost -U postgres -c "CREATE DATABASE $DbName" *> $null
         if ($LASTEXITCODE -eq 0) {
             Write-Ok "Andmebaas '$DbName' — loodud"
             Add-Ok "PostgreSQL andmebaas '$DbName'"
+            Add-StateEntry 'db' $DbName
         } else {
             Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-Create-new-database-in-PostgreSQL.pdf'
         }
@@ -309,12 +366,21 @@ function Invoke-IdeaSetup {
     # anything unexpected -> failed list.
     $settingsPdf = 'docs/install/011-IntelliJ-seadete-importimine.pdf'
     $outcome = 'failed'
+    $cfgDir = ''
     try {
         $info = Get-Content (Join-Path $installDir 'product-info.json') -Raw -ErrorAction Stop | ConvertFrom-Json
         if ($info.dataDirectoryName) {
             $cfgDir = Join-Path $env:APPDATA "JetBrains\$($info.dataDirectoryName)"
             if (Test-Path (Join-Path $cfgDir 'options')) {
-                $outcome = 'existing'
+                # The manifest tells our own earlier seeding apart from a
+                # genuine pre-existing configuration — otherwise a re-run
+                # would warn about settings WE installed and send the
+                # student off to import them manually for nothing.
+                if (Test-StateEntry 'idea-settings' $cfgDir) {
+                    $outcome = 'seeded-earlier'
+                } else {
+                    $outcome = 'existing'
+                }
             } else {
                 New-Item -ItemType Directory -Path $cfgDir -Force | Out-Null
                 Expand-Archive -Path (Join-Path $script:RepoDir 'docs\IntelliJ\settings.zip') `
@@ -327,6 +393,11 @@ function Invoke-IdeaSetup {
         'seeded' {
             Write-Ok 'IntelliJ seaded — paigaldatud'
             Add-Ok 'IntelliJ seaded (heap, ML-completion, brauser jm)'
+            Add-StateEntry 'idea-settings' $cfgDir
+        }
+        'seeded-earlier' {
+            Write-Ok 'IntelliJ seaded — paigaldatud (varasemal käivitusel)'
+            Add-Ok 'IntelliJ seaded — paigaldatud varasemal käivitusel'
         }
         'existing' {
             Write-Warn 'IntelliJ-l on juba oma seadistus — installer ei kirjuta seda üle. Impordi kursuse seaded ise (juhis kokkuvõttes).'
@@ -340,10 +411,20 @@ function Invoke-IdeaSetup {
 
     $plugins = @(Read-ConfigFile (Join-Path $script:RepoDir 'config\intellij-plugins.conf'))
     if ($plugins.Count -eq 0) { return }
+    $pluginNames = @($plugins | ForEach-Object { $_.F2 }) -join ', '
+
+    # Skip the headless install when an earlier run already did this exact
+    # plugin set (the state value changes when the config list changes) —
+    # a student who deliberately removed a plugin is left alone.
+    $pluginSet = (@($plugins | ForEach-Object { $_.F1 }) | Sort-Object) -join ' '
+    if (Test-StateEntry 'idea-plugins' $pluginSet) {
+        Write-Ok 'IntelliJ pluginad — paigaldatud (varasemal käivitusel)'
+        Add-Ok "IntelliJ pluginad — paigaldatud varasemal käivitusel: $pluginNames"
+        return
+    }
 
     # Headless plugin install cannot work while the IDE itself is running.
     if (Get-Process -Name idea64 -ErrorAction SilentlyContinue) {
-        $pluginNames = @($plugins | ForEach-Object { $_.F2 }) -join ', '
         $guideLines = @($plugins | ForEach-Object { "[$($_.F2)]($(Get-DocUrl $_.F3))" })
         Write-Warn 'IntelliJ on praegu avatud — pluginaid ei saa paigaldada, kui IntelliJ töötab.'
         Add-Manual "IntelliJ pluginad ($pluginNames): IntelliJ oli paigalduse ajal avatud. Sulge IntelliJ ja käivita installer uuesti — siis paigalduvad pluginad automaatselt" `
@@ -358,7 +439,8 @@ function Invoke-IdeaSetup {
         -Wait -PassThru -WindowStyle Hidden
     if ($proc.ExitCode -eq 0) {
         Write-Ok 'IntelliJ pluginad — paigaldatud'
-        Add-Ok "IntelliJ pluginad: $(@($plugins | ForEach-Object { $_.F2 }) -join ', ')"
+        Add-Ok "IntelliJ pluginad: $pluginNames"
+        Add-StateEntry 'idea-plugins' $pluginSet
     } else {
         Write-Err 'IntelliJ pluginate paigaldamine ebaõnnestus'
         foreach ($p in $plugins) { Add-Fail "IntelliJ plugin: $($p.F2)" $p.F3 }
@@ -389,9 +471,10 @@ function Assert-Wsl {
         return
     }
     Write-Info 'Paigaldan WSL-i (see võib võtta mõne minuti)...'
-    & wsl.exe --install --no-distribution
+    & wsl.exe --install --no-distribution | Out-Host
     if ($LASTEXITCODE -ne 0) {
-        Fail 'WSL-i paigaldamine ebaõnnestus. Proovi arvuti taaskäivitada ja käivita sama käsk uuesti.'
+        Stop-WslPart ('WSL-i paigaldamine ebaõnnestus. Taaskäivita arvuti ja käivita sama käsk uuesti. ' +
+            'Kui ka siis ei õnnestu, paigalda WSL ja Ubuntu käsitsi juhendi järgi.') $WslGuidePdf
     }
     Write-Ok 'WSL on paigaldatud. Windowsi rakendused on juba tehtud — pärast taaskäivitust jätkub ainult Ubuntu osa.'
     Show-RebootBanner
@@ -413,9 +496,14 @@ function Get-DistroUbuntuVersion([string]$Name) {
 
 function Install-Distro([string]$Name) {
     Write-Info "Paigaldan distro $Name (see võib võtta mitu minutit)..."
-    & wsl.exe --install -d $Name --no-launch
+    # Out-Host is load-bearing: this runs inside Select-TargetDistro, whose
+    # return value the caller captures — without it the wsl.exe progress
+    # text would join the returned distro name (which once produced a bogus
+    # "your Ubuntu is broken" failure on a perfectly healthy machine).
+    & wsl.exe --install -d $Name --no-launch | Out-Host
     if ($LASTEXITCODE -ne 0) {
-        Fail "Distro $Name paigaldamine ebaõnnestus. Kontrolli internetiühendust ja proovi uuesti."
+        Stop-WslPart ("Ubuntu ($Name) paigaldamine ebaõnnestus. Kontrolli internetiühendust ja proovi sama käsku uuesti. " +
+            'Kui ka siis ei õnnestu, paigalda Ubuntu käsitsi juhendi järgi.') $WslGuidePdf
     }
     # Initialise without the interactive first-run wizard: running a command
     # as root registers the distro and skips the username/password prompt.
@@ -427,8 +515,10 @@ function Install-Distro([string]$Name) {
         $tries++
     }
     if ($LASTEXITCODE -ne 0) {
-        Fail "Distro $Name käivitamine ebaõnnestus. Taaskäivita arvuti ja käivita sama käsk uuesti."
+        Stop-WslPart ("Ubuntu ($Name) käivitamine ebaõnnestus. Taaskäivita arvuti ja käivita sama käsk uuesti — " +
+            'paigaldus jätkub poolelijäänud kohast. Kui ka pärast taaskäivitust ei õnnestu, paigalda Ubuntu käsitsi juhendi järgi.') $WslGuidePdf
     }
+    Add-StateEntry 'distro' $Name
     Write-Ok "Distro $Name on paigaldatud."
 }
 
@@ -504,7 +594,7 @@ function Assert-Wsl2([string]$Name) {
 function Assert-DistroHealthy([string]$Name) {
     Invoke-DistroRoot $Name 'true' *> $null
     if ($LASTEXITCODE -ne 0) {
-        Fail ("Sinu olemasolev Ubuntu ($Name) ei tööta korralikult. " +
+        Stop-WslPart ("Sinu olemasolev Ubuntu ($Name) ei tööta korralikult. " +
             'Ära proovi seda ise kustutada — pöördu õpetaja poole.')
     }
 }
@@ -524,7 +614,8 @@ function Resolve-DistroUser([string]$Name) {
 
     Write-Info "Loon Ubuntu kasutaja: $u"
     Invoke-DistroRoot $Name "id -u $u >/dev/null 2>&1 || useradd -m -s /bin/bash -G sudo $u" | Out-Null
-    if ($LASTEXITCODE -ne 0) { Fail 'Kasutaja loomine ebaõnnestus. Pöördu õpetaja poole.' }
+    if ($LASTEXITCODE -ne 0) { Stop-WslPart 'Ubuntu kasutaja loomine ebaõnnestus. Pöördu õpetaja poole.' }
+    Add-StateEntry 'wsl-user' "$Name/$u"
 
     # Make it the default user via /etc/wsl.conf and restart the distro.
     $script = "if grep -q '^default=' /etc/wsl.conf 2>/dev/null; then " +
@@ -533,7 +624,7 @@ function Resolve-DistroUser([string]$Name) {
         "sed -i '/^\[user\]/a default=$u' /etc/wsl.conf; " +
         "else printf '\n[user]\ndefault=%s\n' $u >> /etc/wsl.conf; fi"
     Invoke-DistroRoot $Name $script | Out-Null
-    if ($LASTEXITCODE -ne 0) { Fail 'Vaikimisi kasutaja seadistamine ebaõnnestus. Pöördu õpetaja poole.' }
+    if ($LASTEXITCODE -ne 0) { Stop-WslPart 'Ubuntu vaikimisi kasutaja seadistamine ebaõnnestus. Pöördu õpetaja poole.' }
 
     & wsl.exe --terminate $Name *> $null
     Write-Ok "Ubuntu kasutaja $u on valmis."
@@ -547,7 +638,7 @@ function Grant-PasswordlessSudo([string]$Name, [string]$User) {
         'chmod 0440 /etc/sudoers.d/vali-it && visudo -cf /etc/sudoers.d/vali-it >/dev/null && ' +
         'rm -f /etc/sudoers.d/itcrafters'
     Invoke-DistroRoot $Name $script | Out-Null
-    if ($LASTEXITCODE -ne 0) { Fail 'Sudo seadistamine ebaõnnestus. Pöördu õpetaja poole.' }
+    if ($LASTEXITCODE -ne 0) { Stop-WslPart 'Sudo õiguste seadistamine Ubuntus ebaõnnestus. Pöördu õpetaja poole.' }
     Write-Ok 'Administraatori õigused on seadistatud.'
 }
 
@@ -555,13 +646,13 @@ function Grant-PasswordlessSudo([string]$Name, [string]$User) {
 function Install-InstallerFiles([string]$Name, [string]$User) {
     $winPath = $script:RepoTar -replace '\\', '/'
     $wslTar = (& wsl.exe -d $Name -- wslpath -a $winPath 2>$null | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or -not $wslTar) { Fail 'Allalaaditud faili asukoha teisendamine ebaõnnestus.' }
+    if ($LASTEXITCODE -ne 0 -or -not $wslTar) { Stop-WslPart 'Allalaaditud faili asukoha teisendamine Ubuntu jaoks ebaõnnestus. Proovi sama käsku uuesti.' }
 
     $script = "rm -rf ~/$InstallDirName && mkdir -p ~/$InstallDirName && " +
         "tar -xzf '$wslTar' -C ~/$InstallDirName --strip-components=1 && " +
         "chmod +x ~/$InstallDirName/install.sh ~/$InstallDirName/scripts/*.sh"
     & wsl.exe -d $Name -u $User -- bash -c $script
-    if ($LASTEXITCODE -ne 0) { Fail 'Installeri lahtipakkimine Ubuntusse ebaõnnestus.' }
+    if ($LASTEXITCODE -ne 0) { Stop-WslPart 'Installeri lahtipakkimine Ubuntusse ebaõnnestus. Proovi sama käsku uuesti.' }
 }
 
 function Invoke-Installer([string]$Name, [string]$User) {
@@ -641,6 +732,7 @@ function Invoke-CourseSetup {
                 Add-Fail "$desc — allalaadimine ebaõnnestus. Kontrolli internetiühendust ja proovi installerit uuesti, või laadi projekt ise alla" $clonePdf "Repo: $url"
                 continue
             }
+            Add-StateEntry 'course' $dir
         }
 
         # Frontend: npm ci needs package-lock.json (a course-repo
@@ -897,14 +989,35 @@ Get-RepoFiles
 Install-WindowsApps
 Invoke-PostgresSetup
 Invoke-IdeaSetup
-Assert-Wsl
-$target = Select-TargetDistro
-Assert-Wsl2 $target
-Assert-DistroHealthy $target
-$user = Resolve-DistroUser $target
-Grant-PasswordlessSudo $target $user
-Install-InstallerFiles $target $user
-Invoke-Installer $target $user
+
+# The WSL/Ubuntu part is best-effort from here on: a failure lands as ONE
+# red entry in the summary (with the WSL guide PDF) and the run carries on
+# with the course project and the summary — by this point the Windows apps
+# are done and hiding that behind a hard stop helps nobody.
+$target = ''
+try {
+    Assert-Wsl
+    $target = Select-TargetDistro
+    Assert-Wsl2 $target
+    Assert-DistroHealthy $target
+    $user = Resolve-DistroUser $target
+    Grant-PasswordlessSudo $target $user
+    Install-InstallerFiles $target $user
+    Invoke-Installer $target $user
+} catch {
+    $abort = $script:WslAbort
+    if (-not $abort) {
+        # Not a Stop-WslPart unwind but a genuinely unexpected error.
+        $abort = [pscustomobject]@{
+            Msg = "Ubuntu osas juhtus ootamatu viga: $($_.Exception.Message)"
+            Pdf = $WslGuidePdf; Extra = ''
+        }
+    }
+    Write-Err $abort.Msg
+    Write-Warn 'Jätkan ülejäänud sammudega — Ubuntu osa saab uuesti proovida sama käsuga.'
+    Add-Fail "Ubuntu (WSL): $($abort.Msg)" $abort.Pdf $abort.Extra
+    $target = ''   # do not advertise a distro that may not work
+}
 Invoke-CourseSetup
 Show-Summary $target
 Write-HtmlSummary $target

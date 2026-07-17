@@ -25,7 +25,11 @@ jobs:
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
-          $results = Invoke-ScriptAnalyzer -Path setup.ps1 -Severity Error
+          # -Path takes a single string, hence the loop.
+          $results = @()
+          foreach ($f in 'setup.ps1', 'uninstall.ps1') {
+            $results += Invoke-ScriptAnalyzer -Path $f -Severity Error
+          }
           $results | Format-Table -AutoSize
           if ($results) { exit 1 }
 

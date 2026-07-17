@@ -23,9 +23,10 @@ technical identifiers use `vali-it` (`~/.vali-it/install.log`, `/etc/sudoers.d/v
 # Lint (must stay clean; shellcheck is not installed on this machine, use Docker)
 docker run --rm -v "$PWD:/mnt:ro" koalaman/shellcheck:v0.10.0 -x install.sh scripts/*.sh lib/*.sh
 
-# PSScriptAnalyzer for setup.ps1 (0 errors required; Write-Host warnings are intentional)
+# PSScriptAnalyzer for setup.ps1 + uninstall.ps1 (0 errors required; Write-Host warnings are
+# intentional; -Path takes one string, hence the loop)
 docker run --rm -v "$PWD:/src:ro" mcr.microsoft.com/powershell pwsh -NoProfile -Command \
-  'Install-Module PSScriptAnalyzer -RequiredVersion 1.22.0 -Force -Scope CurrentUser *>$null; Invoke-ScriptAnalyzer -Path /src/setup.ps1 -Severity Error'
+  'Install-Module PSScriptAnalyzer -RequiredVersion 1.22.0 -Force -Scope CurrentUser *>$null; foreach ($f in "/src/setup.ps1", "/src/uninstall.ps1") { Invoke-ScriptAnalyzer -Path $f -Severity Error }'
 
 # Full smoke test in a clean container (swap 24.04 for 22.04; both must pass, twice = idempotency)
 docker run --rm -v "$PWD:/src:ro" ubuntu:24.04 bash -c '
@@ -71,6 +72,22 @@ directly.
   `student123`, course DB `vali_it`; a server with another password → DB creation goes to
   the manual list instead of failing the run. Plugins are skipped (→ manual step) while
   `idea64` is running — headless installPlugins fails then.
+- **State manifest**: `%LOCALAPPDATA%\vali-it\installed.txt` (`kind|value|date` lines,
+  helpers `Add-StateEntry`/`Test-StateEntry`) records what the installer ITSELF installed
+  (apps by winget id, db, distro, idea-settings, idea-plugins set, course clone, wsl-user).
+  Re-runs use it to say "paigaldatud varasemal käivitusel" instead of "juba olemas" /
+  the IntelliJ "impordi ise" warning (which confused testers into redoing work), and to
+  skip the headless plugin re-install. `uninstall.ps1` removes ONLY manifest entries by
+  default (`$env:ITC_PURGE='1'` also removes config-listed apps missing from it;
+  `$env:ITC_YES='1'` skips the confirmation) — pre-existing software stays untouched,
+  mirroring the installer. Both helpers are best-effort and must never fail a step.
+- **The WSL/Ubuntu part of setup.ps1 is best-effort**: distro-level failures go through
+  `Stop-WslPart` (throw → main-flow catch → one red summary entry with PDF 006) and the
+  run continues to course setup + summary; only pre-WSL problems (no admin, old Windows,
+  unsupported `ITC_DISTRO`) still hard-`Fail`. Inside `Install-Distro` the
+  `wsl.exe --install` output MUST stay piped to `Out-Host`: it runs inside
+  `Select-TargetDistro` whose return value is captured, and unpiped progress text once
+  corrupted the returned distro name (bogus "your Ubuntu is broken" on a healthy machine).
 - The summary is three lists (ok / failed+PDF / manual+PDF). Manual steps = static
   `config/manual-steps.conf` + dynamic `Add-Manual` entries. The same summary is written
   to the desktop as `Vali-IT-kokkuvote.html` (opened in the browser; includes DB

@@ -119,6 +119,7 @@ cd ~/vali-it-installer
 ```
 setup.ps1            Windowsi bootstrap (õpilase sissepääs): winget-rakendused,
                      PostgreSQL, IntelliJ seadistus, WSL2 + Ubuntu, kokkuvõte
+uninstall.ps1        eemaldaja: võtab maha selle, mille installer ise paigaldas
 install.sh           Linuxi peaskript (menüü / --all / --verify)
 scripts/             sammud: 01-system, 02-ai-tools, 03-verify
 lib/                 jagatud moodulid (ui, logger, checks, installer, verify, ...)
@@ -162,6 +163,29 @@ testitakse päris masinal.
 WSL-i eripärade testimiseks päris masinal ("värske õpilase" seis) vt
 [docs/UBUNTU-CLEAN-INSTALL.md](docs/UBUNTU-CLEAN-INSTALL.md) — Ubuntu
 puhas kustutamine ja taaspaigaldus.
+
+### Eemaldamine (testmasina lähtestamine)
+
+Installer peab manifesti (`%LOCALAPPDATA%\vali-it\installed.txt`) sellest,
+mille ta **ise** paigaldas — mis oli masinas juba enne, sinna ei kuulu.
+Eemaldaja võtab vaikimisi maha ainult manifestis oleva:
+
+```powershell
+irm https://raw.githubusercontent.com/bcs-hub/vali-it-installer/main/uninstall.ps1 | iex
+```
+
+Enne kustutamist näidatakse nimekirja ja küsitakse kinnitust (`JAH`).
+Valikud keskkonnamuutujatega enne käivitamist:
+
+```powershell
+$env:ITC_YES = '1'     # ära küsi kinnitust
+$env:ITC_PURGE = '1'   # eemalda ka manifestist puuduvad kursuse rakendused
+                       # (nimekiri config/windows-apps.conf); Ubuntu distro ja
+                       # projektikaust kustuvad ka siis ainult manifesti järgi
+```
+
+NB! Ubuntu distro ja kursuse projektikausta kustutamine hävitab kõik neis
+olevad failid — eemaldaja hoiatab selle eest nimekirjas eraldi.
 
 ## Tõrkeotsing
 
