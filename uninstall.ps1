@@ -70,7 +70,9 @@ try {
 $LogFile = Join-Path $env:TEMP 'vali-it-uninstall.log'
 $script:LogStarted = $false
 try {
-    Start-Transcript -Path $LogFile -Force *> $null
+    # -Append for the same reason as in setup.ps1: a retry run must not
+    # wipe the log of the run where the failure happened.
+    Start-Transcript -Path $LogFile -Append -Force *> $null
     $script:LogStarted = $true
 } catch { }
 
@@ -443,6 +445,7 @@ if ($entries.Count -gt 0) {
 $desktop = [Environment]::GetFolderPath('Desktop')
 if ($desktop) { Remove-Item (Join-Path $desktop 'Vali-IT-kokkuvote.html') -Force -ErrorAction SilentlyContinue }
 foreach ($t in @('vali-it-installer.tar.gz', 'vali-it-installer-src', 'vali-it-course.log',
+        'vali-it-setup.log', 'vali-it-winget.log',
         'vali-it-uninstall.tar.gz', 'vali-it-uninstall-src')) {
     Remove-Item (Join-Path $env:TEMP $t) -Recurse -Force -ErrorAction SilentlyContinue
 }

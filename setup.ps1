@@ -90,7 +90,10 @@ try {
 $SetupLogFile = Join-Path $env:TEMP 'vali-it-setup.log'
 $script:LogStarted = $false
 try {
-    Start-Transcript -Path $SetupLogFile -Force *> $null
+    # -Append: a rerun (e.g. after the WSL reboot) must not wipe the log of
+    # the run where the actual failure happened; the transcript header
+    # separates the sessions.
+    Start-Transcript -Path $SetupLogFile -Append -Force *> $null
     $script:LogStarted = $true
 } catch { }
 
@@ -143,7 +146,12 @@ function Invoke-TickedJob([string]$Label, [string]$Exe, [object[]]$CmdArgs,
     # job) — both mean the command never really ran.
     if ($null -eq $res -or $null -eq $res.Code) { return [pscustomobject]@{ Code = 999; Duration = $dur } }
     if ($res.Out -and $OutLog) {
-        try { $res.Out | Out-File -FilePath $OutLog -Append -Encoding UTF8 } catch { }
+        # Run separator: these logs grow across reruns and would otherwise
+        # be one unreadable blob.
+        try {
+            "=== $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') | $Label ===`r`n$($res.Out)" |
+                Out-File -FilePath $OutLog -Append -Encoding UTF8
+        } catch { }
     }
     return [pscustomobject]@{ Code = $res.Code; Duration = $dur }
 }
