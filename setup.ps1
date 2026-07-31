@@ -1024,7 +1024,7 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += '</style></head><body>'
         $h += '<h1>Vali-IT paigalduse kokkuvõte</h1>'
         $h += "<p class='aeg'>$(Get-Date -Format 'dd.MM.yyyy HH:mm') · Kogu paigaldus kestis: $(Format-Duration $script:RunTimer.Elapsed)</p>"
-        $h += "<p class='teade'>See kokkuvõte on salvestatud faili <code>$(ConvertTo-HtmlText $path)</code> — võid lehe sulgeda ja hiljem sealt uuesti avada.</p>"
+        $h += "<p class='teade'>See kokkuvõte on salvestatud faili <code>$(ConvertTo-HtmlText $path)</code> — võid lehe sulgeda ja hiljem sealt uuesti avada. Kui soovid lehe käepäraselt hoida, lisa see brauseri järjehoidjatesse (Ctrl+D).</p>"
         $h += '<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>'
         if ($script:AppsInstalledNow) {
             $h += ('<p class="vihje"><b>Soovitus:</b> taaskäivita arvuti üks kord, enne kui hakkad programme ' +
