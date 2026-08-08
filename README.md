@@ -80,14 +80,17 @@ koos repo lingiga. Uue kursuse jaoks piisab repo-URL-i muutmisest
 Neid ei saa automatiseerida; installer kuvab sama nimekirja kokkuvõttes
 (loend: [`config/manual-steps.conf`](config/manual-steps.conf)):
 
-1. [IntelliJ litsentsi aktiveerimine](docs/install/020-IntelliJ-litsentsi-aktiveerimine.pdf)
+1. [IntelliJ IDEA avamine](docs/install/020-IntelliJ-IDEA-avamine.pdf)
 2. [Docker Desktopi esmane käivitamine](docs/install/019-Docker-Desktopi-esmane-kaivitamine.pdf)
 3. [GitHubi konto ja gh sisselogimine](docs/install/021-GitHub-konto-ja-gh-sisselogimine.pdf)
 4. [Claude Code'i esimene käivitamine](docs/install/022-Claude-Code-esimene-kaivitamine.pdf)
 5. [Terminali vaikeshelli määramine](docs/install/014-Terminali-default-shell-i-maaramine-WSL-Ubuntu.pdf) (soovi korral)
 
-Lisaks lisandub nimekirja [serverite käivitamise samm](docs/install/025-Serverite-kaivitamine-IntelliJ.pdf),
-kui kursuse projekt on arvutis olemas (vt "Kursuse projekt" ülal).
+Kui kursuse projekt on arvutis olemas (vt "Kursuse projekt" ülal), lisanduvad
+nimekirja lõppu veel kaks sammu:
+[serverite käivitamine](docs/install/025-Serverite-kaivitamine-IntelliJ.pdf) ja
+[andmebaasi ühendamine IntelliJ-s](docs/install/026-Andmebaasi-uhendamine-IntelliJ.pdf)
+(Data Source from URL; kontrollib ühtlasi, kas PostgreSQL töötab).
 
 Kõik sammsammulised juhendid on kaustas [`docs/install/`](docs/install/).
 

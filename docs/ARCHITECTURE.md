@@ -54,6 +54,7 @@ Linuxi poole testitavaks ilma Windowsita.
 | IntelliJ tuvastus `idea64.exe` asukoha järgi (Find-IdeaExe) | Toolboxi paigaldusi winget ID järgi ei näe; otsitakse Program Files + LocalAppData + Toolbox, uusim versioon võidab. Pluginaid ei paigaldata, kui IDE parasjagu töötab (headless-paigaldus ebaõnnestuks) — selle asemel käsitsi-samm |
 | Temurin JDK 21 winget'iga; MSI override paneb PATH-i JA `JAVA_HOME`-i (`ADDLOCAL=...FeatureJavaHome`) | Kõik kolm tarbijat kaetud: gradlew (PATH/JAVA_HOME), IntelliJ (auto-detect Program Files'ist), õpilase terminal. Olemasolu tuvastab `Find-Jdk21` (Adoptium/Oracle/Microsoft globid, uusim võidab) — confi kontrollkäsk on `-` meelega, sest PATH-il olev vana `java` (nt Java 8) ei tohi JDK 21-na arvesse minna |
 | Kursuse projekt (`course.conf`) kloonitakse ainult puuduvasse kausta; sõltuvuste eellaadimine on best-effort | Olemasolev kaust on õpilase töö ja jääb puutumata (eellaadimine jookseb siiski — kirjutab ainult cache'e, nii toimib ka katkenud jooksu jätkamine). Eellaadimise ebaõnnestumine pole kriitiline: esimene build laeb sõltuvused ise; serverite käivitamine jääb õpilasele IntelliJ-s (PDF 025), kloonimise ebaõnnestumisel on varutee käsitsi allalaadimine (PDF 023 + repo link Fail-kirjes). Värskelt paigaldatud git/npm/JDK pole jooksva sessiooni PATH-il → `Find-GitExe`/`Find-NpmCmd`/`Find-Jdk21` + explicit `JAVA_HOME` lapsprotsessile |
+| Claude Code paigaldatakse npm-iga (`npm install -g @anthropic-ai/claude-code`), mitte natiivse installeriga | npm-pakett paigaldab **sama natiivse binaari** mis `claude.ai/install.sh` (binaar ise ei kasuta jooksutamisel Node'i) — jooksutusajal vahet pole. Node LTS paigaldatakse kursuse jaoks niikuinii, seega sõltuvus on tasuta, ja NVM-i alt on npm-i globaalne kaust kirjutatav → automaatuuendused töötavad. Natiivne installer paneb binaari `~/.local/bin`-i, mida ta ise PATH-i EI lisa (soovitab kasutajal `~/.bashrc`-sse rida lisada) → samas sessioonis jääks `tool_available "claude"` leidmata ja tudeng näeks põhjendamatut viga. Vt "Claude Code: miks npm" allpool |
 | Vea korral menüü jätkab | Üks ebaõnnestunud samm raporteeritakse eestikeelselt; sammud jooksevad alamprotsessidena (`run_step`) |
 | Olemasolevat distrot EI kustutata kunagi | Automaatika ei tohi kellegi andmeid hävitada; katkise distro puhul suuname õpetaja juurde |
 | Olemasolev 22.04/24.04 võetakse kasutusele | Sellepärast toetabki installer mõlemat versiooni; mõlema olemasolul küsitakse (24.04 soovitatud), `$env:ITC_DISTRO` valib käsitsi |
@@ -121,6 +122,49 @@ ei jooksuta. `checks.sh::load_nvm` source'ib `nvm.sh` ise (strict mode
 ajutiselt lõdvendatud, sest nvm pole `set -u` puhas) ja
 `tool_available` arvestab sellega. Paigaldaja ja verify kasutavad sama
 funktsiooni, nii et nad ei saa omavahel eri meelt olla.
+
+### Claude Code: miks npm, mitte natiivne installer
+
+`install_tool_claude` kasutab `npm install -g @anthropic-ai/claude-code`.
+Anthropicu dokumentatsioon soovitab natiivset installerit
+(`curl -fsSL https://claude.ai/install.sh | bash`), aga selle projekti
+kontekstis jääme teadlikult npm-i juurde.
+
+**Jooksutusajal vahet ei ole.** npm-pakett paigaldab sama natiivse
+binaari mis standalone-installer: binaar tuleb sisse platvormipõhise
+valikulise sõltuvusena (`@anthropic-ai/claude-code-linux-x64`) ja
+postinstall lingib selle paika. Paigaldatud `claude` ei käivita Node'i.
+Natiivsele üleminek ei annaks seega paremat Claude'i, ainult teise
+paigaldustee.
+
+**Natiivne installer lõhuks paigaldusaegse kontrolli.** Mõõdetud värskes
+`ubuntu:24.04` konteineris uue kasutajaga (sama olukord mis värskes
+WSL-i distros):
+
+```
+enne:   ~/.local/bin puudub, PATH ei sisalda seda
+        curl -fsSL https://claude.ai/install.sh | bash   → exit=0, "Installation complete!"
+pärast: PATH sisaldab .local/bin: EI
+        command -v claude: LEIDMATA
+```
+
+Installer ei lisa ise PATH-i, vaid soovitab lõpuks kasutajal lisada rea
+`~/.bashrc`-sse. Ubuntu 22.04/24.04 `~/.profile` lisab `~/.local/bin`
+PATH-i ainult siis, kui kaust juba eksisteerib login-shelli käivitumise
+hetkel — värskes distros seda pole. Tulemus: paigaldus õnnestub, aga
+`tool_available "claude"` ei leia binaari, `install_custom_tools` loeb
+sammu ebaõnnestunuks ja tudeng näeb punast viga, kuigi kettal on kõik
+korras. Üleminek nõuaks `load_nvm`-i analoogi (PATH-i eksport enne
+kontrolli + rida `~/.bashrc`-sse) — lahendatud probleemi vahetamine
+lahendamata probleemi vastu.
+
+**Millal see otsus üle vaadata.** npm-pakett nõuab alates v2.1.198
+Node.js 22+. `nvm install --lts` annab praegu 22.x, seega korras. Kui
+LTS liigub nii, et tudengitel satub vanem Node, hakkab paistma
+`EBADENGINE` hoiatus — install õnnestub siiski ja `claude` töötab (binaar
+ei sõltu Node'ist), aga algajat võib hoiatus hirmutada. Sellisel juhul
+on natiivne installer õige valik ja PATH-i käsitlus tuleb koos sellega
+lahendada.
 
 ## Laiendusmustrid
 

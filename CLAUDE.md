@@ -101,8 +101,12 @@ directly.
   `config/manual-steps.conf` + dynamic `Add-Manual` entries. The same summary is written
   to the desktop as `Vali-IT-kokkuvote.html` (opened in the browser; includes DB
   connection details) — the console version dies with the window. Guide links use
-  `?raw=true` so GitHub serves the PDF as a direct download.
-- Student guide PDFs live in `docs/install/` (001-Slack … 025-Serverite-kaivitamine;
+  `?raw=true` so GitHub serves the PDF as a direct download. The HTML also ends with a
+  technical-log table (setup / winget / course logs + `~/.vali-it/install.log`) — that is
+  the support path: "send these files to the instructor". Both exit branches go through
+  `Stop-Installer`, which pauses before closing (under `irm | iex` the end of the script
+  closes the window).
+- Student guide PDFs live in `docs/install/` (001-Slack … 026-Andmebaasi-uhendamine;
   several are generated placeholders awaiting the instructor's real screenshots). When
   renumbering, update every reference in setup.ps1 + configs + README and verify each
   referenced file exists on disk.

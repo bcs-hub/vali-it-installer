@@ -1,0 +1,60 @@
+﻿<!doctype html><html lang="et"><head><meta charset="utf-8">
+<title>Vali-IT paigalduse kokkuvõte</title><style>
+body{font-family:"Segoe UI",sans-serif;max-width:800px;margin:2em auto;padding:0 1em;line-height:1.5}
+h1{border-bottom:2px solid #ccc;padding-bottom:.3em} .aeg{color:#666}
+.ok{color:#1a7f37} .fail{color:#b30000} .manual{color:#9a6700}
+li{margin:.4em 0} .lisainfo{font-size:.92em;color:#444} code{background:#f2f2f2;padding:2px 5px}
+.teade{color:#b30000;font-weight:600;border:1px solid #b30000;border-radius:6px;padding:.6em .8em;background:#fff5f5}
+.vihje{color:#9a6700;border:1px solid #d4a72c;border-radius:6px;padding:.6em .8em;background:#fff8c5}
+.vihje{color:#9a6700;border:1px solid #d4a72c;border-radius:6px;padding:.6em .8em;background:#fff8c5}
+table{border-collapse:collapse} td{padding:3px 14px 3px 0;vertical-align:top}
+</style></head><body>
+<h1>Vali-IT paigalduse kokkuvõte</h1>
+<p class='aeg'>05.08.2026 23:44 · Kogu paigaldus kestis: 40m 3s</p>
+<p class='teade'>See kokkuvõte on salvestatud faili <code>C:\Users\Grete\Desktop\Vali-IT-kokkuvote.html</code> — võid lehe sulgeda ja hiljem sealt uuesti avada. Kui soovid lehe käepäraselt hoida, lisa see brauseri järjehoidjatesse (Ctrl+D).</p>
+<p>Juhendi lingid laadivad PDF-faili otse alla — vaata brauseri allalaadimiste kausta.</p>
+<p class="vihje"><b>Soovitus:</b> taaskäivita arvuti üks kord, enne kui hakkad programme kasutama — näiteks Docker Desktop hakkab korralikult tööle alles pärast taaskäivitust.</p>
+<h2 class="ok">Korras</h2><ul>
+<li class='ok'>✓ Git (Windows) (1m 36s)</li>
+<li class='ok'>✓ Node.js LTS (Windows) (32s)</li>
+<li class='ok'>✓ PostgreSQL 17 andmebaasiserver (15m 46s)</li>
+<li class='ok'>✓ Java 21 (Temurin JDK) (34s)</li>
+<li class='ok'>✓ IntelliJ IDEA (5m 27s)</li>
+<li class='ok'>✓ Docker Desktop (2m 32s)</li>
+<li class='ok'>✓ Slack (27s)</li>
+<li class='ok'>✓ Zoom (1m 13s)</li>
+<li class='ok'>✓ PostgreSQL andmebaas 'vali_it' (2s)</li>
+<li class='ok'>✓ IntelliJ seaded (heap, ML-completion, brauser jm) (1s)</li>
+<li class='ok'>✓ IntelliJ pluginad: Rainbow Brackets, JPA Buddy, Vue.js (36s)</li>
+<li class='ok'>✓ Ubuntu keskkond (kõik kursuse käsurea-tööriistad) (4m 52s)</li>
+<li class='ok'>✓ Kursuse projekt (bank41) — C:\Users\Grete\vali-it\bank41 (ava see kaust IntelliJ-s) (1m 59s)</li>
+</ul>
+<p class="vihje"><b>Vihje:</b> kui mõne sammuga tekib probleem või PDF-juhendis jääb midagi segaseks, küsi julgelt abi AI-lt (ChatGPT, Claude, Gemini vms). Kirjelda probleemi oma sõnadega, lisa vestlusse kaasa ka sama PDF-juhend (leiad selle brauseri allalaadimiste kaustast) ja kopeeri juurde täpne veateade, kui see on olemas. Kui ka siis ei õnnestu, pöördu õpetaja poole.</p>
+<h2 class="manual">Tee ise läbi</h2><ol>
+<li>IntelliJ IDEA: logi sisse JetBrains kontoga ja aktiveeri litsents — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/020-IntelliJ-litsentsi-aktiveerimine.pdf?raw=true'>juhend (PDF)</a></li>
+<li>Docker Desktop: esimene käivitamine ja WSL-i sisselülitamine — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/019-Docker-Desktopi-esmane-kaivitamine.pdf?raw=true'>juhend (PDF)</a></li>
+<li>GitHub: konto loomine ja 'gh auth login' (Ubuntu terminalis) — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/021-GitHub-konto-ja-gh-sisselogimine.pdf?raw=true'>juhend (PDF)</a></li>
+<li>Claude Code: esimene käivitamine ja sisselogimine (Ubuntu terminalis) — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/022-Claude-Code-esimene-kaivitamine.pdf?raw=true'>juhend (PDF)</a></li>
+<li>Windows Terminali vaikeshelli määramine (soovi korral) — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/014-Terminali-default-shell-i-maaramine-WSL-Ubuntu.pdf?raw=true'>juhend (PDF)</a></li>
+<li>Kursuse projekt (bank41): käivita serverid IntelliJ-s (backend + frontend) — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/025-Serverite-kaivitamine-IntelliJ.pdf?raw=true'>juhend (PDF)</a><br><span class='lisainfo'>Ava IntelliJ-s kaust: C:\Users\Grete\vali-it\bank41</span></li>
+<li>Andmebaasi ühendamine IntelliJ-s (Data Source from URL) — kontrollib ühtlasi, kas PostgreSQL töötab — <a href='https://github.com/bcs-hub/vali-it-installer/blob/main/docs/install/026-Andmebaasi-uhendamine-IntelliJ.pdf?raw=true'>juhend (PDF)</a><br><span class='lisainfo'>Andmeallika URL: jdbc:postgresql://localhost:5432/vali_it</span></li>
+</ol>
+<h2>Andmebaasi andmed</h2>
+<table>
+<tr><td><b>Host</b></td><td><code>localhost</code></td></tr>
+<tr><td><b>Port</b></td><td><code>5432</code></td></tr>
+<tr><td><b>Andmebaas</b></td><td><code>vali_it</code></td></tr>
+<tr><td><b>Kasutaja</b></td><td><code>postgres</code></td></tr>
+<tr><td><b>Parool</b></td><td><code>student123</code></td></tr>
+<tr><td><b>IntelliJ andmeallika URL</b></td><td><code>jdbc:postgresql://localhost:5432/vali_it</code></td></tr>
+</table>
+<p>Ubuntu avamiseks kirjuta terminali: <code>wsl -d Ubuntu-24.04</code> või otsi Start-menüüst Ubuntu.</p>
+<h2>Tehnilised logid</h2>
+<p>Kui midagi ebaõnnestus, saada õpetajale koos selle kokkuvõttega ka need failid (ava rada Exploreri aadressiribal):</p>
+<table>
+<tr><td><b>Kogu paigalduse väljund</b></td><td><code>C:\Users\Grete\AppData\Local\Temp\vali-it-setup.log</code></td></tr>
+<tr><td><b>Rakenduste paigaldus (winget)</b></td><td><code>C:\Users\Grete\AppData\Local\Temp\vali-it-winget.log</code></td></tr>
+<tr><td><b>Kursuse projekti eellaadimine</b></td><td><code>C:\Users\Grete\AppData\Local\Temp\vali-it-course.log</code></td></tr>
+<tr><td><b>Ubuntu sees</b></td><td><code>~/.vali-it/install.log</code></td></tr>
+</table>
+</body></html>

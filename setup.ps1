@@ -974,6 +974,11 @@ function Invoke-CourseSetup {
         Add-Manual "$($desc): käivita serverid IntelliJ-s (backend + frontend)" `
             'docs/install/025-Serverite-kaivitamine-IntelliJ.pdf' `
             "Ava IntelliJ-s kaust: $dir"
+        # Right after the servers step on purpose: the same IntelliJ project is
+        # already open, and a successful connection also proves PostgreSQL runs.
+        Add-Manual "Andmebaasi ühendamine IntelliJ-s (Data Source from URL) — kontrollib ühtlasi, kas PostgreSQL töötab" `
+            'docs/install/026-Andmebaasi-uhendamine-IntelliJ.pdf' `
+            "Andmeallika URL: jdbc:postgresql://localhost:5432/$DbName"
     }
 }
 
@@ -1018,7 +1023,6 @@ function Write-HtmlSummary([string]$DistroName) {
         $h += '.ok{color:#1a7f37} .fail{color:#b30000} .manual{color:#9a6700}'
         $h += 'li{margin:.4em 0} .lisainfo{font-size:.92em;color:#444} code{background:#f2f2f2;padding:2px 5px}'
         $h += '.teade{color:#b30000;font-weight:600;border:1px solid #b30000;border-radius:6px;padding:.6em .8em;background:#fff5f5}'
-        $h += '.vihje{color:#9a6700;border:1px solid #d4a72c;border-radius:6px;padding:.6em .8em;background:#fff8c5}'
         $h += '.vihje{color:#9a6700;border:1px solid #d4a72c;border-radius:6px;padding:.6em .8em;background:#fff8c5}'
         $h += 'table{border-collapse:collapse} td{padding:3px 14px 3px 0;vertical-align:top}'
         $h += '</style></head><body>'
@@ -1237,6 +1241,7 @@ if ($script:FailList.Count -gt 0) {
 }
 Write-Host '==========================================================' -ForegroundColor Green
 Write-Ok 'Valmis! Sinu arvuti on kursuseks ette valmistatud.'
-Stop-SetupLog
-Restore-ConsoleMode
 Write-Host '==========================================================' -ForegroundColor Green
+# Same exit path as the failure branch: under 'irm | iex' the end of the
+# script closes the window, so the success summary needs the pause too.
+Stop-Installer 0
