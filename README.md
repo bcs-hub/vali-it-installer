@@ -71,7 +71,7 @@ sõltub tulemus jooksust: kui projekt on kettal, on "Tee ise läbi"
 nimekirjas serverite käivitamise samm koos kaustateega (juhend
 [025](docs/install/025-Serverite-kaivitamine-IntelliJ.pdf)); kui
 allalaadimine ebaõnnestus, viitab punane kirje käsitsi allalaadimise
-juhendile ([023](docs/install/023-Kursuse-projekti-allalaadimine-ja-avamine.pdf))
+juhendile ([023](docs/install/023-Kursuse-projekti-allalaadimine.pdf))
 koos repo lingiga. Uue kursuse jaoks piisab repo-URL-i muutmisest
 `course.conf`-is (bank41 → bank42 → ...).
 

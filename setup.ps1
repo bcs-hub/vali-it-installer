@@ -916,7 +916,7 @@ function Invoke-CourseSetup {
 
         # Failed clone -> the student can fetch the repo manually: the fail
         # entry carries the how-to guide (PDF 023) plus a clickable repo link.
-        $clonePdf = 'docs/install/023-Kursuse-projekti-allalaadimine-ja-avamine.pdf'
+        $clonePdf = 'docs/install/023-Kursuse-projekti-allalaadimine.pdf'
         if (Test-Path $dir) {
             Write-Ok "$desc — kaust on juba olemas, ei puutu ($dir)"
         } else {

@@ -212,7 +212,7 @@ bank41 → bank42 → ...); iga rea kohta:
      kaustatee) — ka siis, kui eellaadimine kukkus, sest esimene build
      laeb sõltuvused ise;
    - kloon ebaõnnestus (või git puudus) → Fail-kirje PDF 023 varuteega
-     (`023-Kursuse-projekti-allalaadimine-ja-avamine.pdf`) + klikitav
+     (`023-Kursuse-projekti-allalaadimine.pdf`) + klikitav
      repo link (Fail-kirjete `Extra` väli, sama linkimine mis
      manual-sammudel).
 
