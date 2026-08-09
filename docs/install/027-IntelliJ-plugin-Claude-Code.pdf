@@ -1,0 +1,85 @@
+%PDF-1.4
+1 0 obj
+<</Type /Catalog /Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type /Pages /Kids [3 0 R] /Count 1>>
+endobj
+3 0 obj
+<</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources <</Font <</F1 5 0 R /F2 6 0 R>>>> /Contents 4 0 R>>
+endobj
+4 0 obj
+<</Length 2236>>
+stream
+BT
+/F2 20 Tf
+1 0 0 1 62 780 Tm (IntelliJ plugin: Claude Code) Tj
+/F1 11 Tf
+1 0 0 1 62 740 Tm (Käesolev juhend on ajutine kohatäide \(placeholder\).) Tj
+1 0 0 1 62 724 Tm (Täielik juhend koos ekraanipiltidega lisatakse hiljem.) Tj
+/F2 13 Tf
+1 0 0 1 62 698 Tm (Mis plugin see on?) Tj
+/F1 11 Tf
+1 0 0 1 62 676 Tm (Claude Code [Beta] — Anthropic PBC ametlik plugin, mis toob) Tj
+1 0 0 1 62 660 Tm (Claude Code'i otse IntelliJ IDEA sisse.) Tj
+1 0 0 1 62 644 Tm (Plugina ID: com.anthropic.code.plugin) Tj
+1 0 0 1 62 628 Tm (Marketplace: https://plugins.jetbrains.com/plugin/27310) Tj
+/F2 13 Tf
+1 0 0 1 62 602 Tm (Kas ma pean midagi tegema?) Tj
+/F1 11 Tf
+1 0 0 1 62 580 Tm (Tavaliselt mitte — installer paigaldab plugina automaatselt.) Tj
+1 0 0 1 62 564 Tm (Järgi seda juhendit ainult siis, kui kokkuvõttes oli kirjas,) Tj
+1 0 0 1 62 548 Tm (et plugina paigaldamine ebaõnnestus või jäi tegemata.) Tj
+/F2 13 Tf
+1 0 0 1 62 522 Tm (Käsitsi paigaldamine) Tj
+/F1 11 Tf
+1 0 0 1 62 500 Tm (1. Ava IntelliJ IDEA.) Tj
+1 0 0 1 62 484 Tm (2. Vali File > Settings \(Windowsis Ctrl+Alt+S\).) Tj
+1 0 0 1 62 468 Tm (3. Vasakust menüüst vali Plugins.) Tj
+1 0 0 1 62 452 Tm (4. Vali ülevalt sakk Marketplace.) Tj
+1 0 0 1 62 436 Tm (5. Kirjuta otsingukasti: Claude Code) Tj
+1 0 0 1 62 420 Tm (6. Leia tulemus, mille autor on Anthropic PBC.) Tj
+1 0 0 1 62 404 Tm (   NB! Marketplace'is on palju sarnase nimega pluginaid.) Tj
+1 0 0 1 62 388 Tm (   Võta ainult see, mille autor on Anthropic PBC.) Tj
+1 0 0 1 62 372 Tm (7. Vajuta nupule Install.) Tj
+1 0 0 1 62 356 Tm (8. Kui IntelliJ palub end taaskäivitada, siis tee seda) Tj
+1 0 0 1 62 340 Tm (   \(Restart IDE\).) Tj
+/F2 13 Tf
+1 0 0 1 62 314 Tm (Peale paigaldamist) Tj
+/F1 11 Tf
+1 0 0 1 62 292 Tm (Plugin eeldab, et Claude Code on arvutis olemas — installer) Tj
+1 0 0 1 62 276 Tm (paigaldab selle Ubuntu \(WSL\) poolele.) Tj
+1 0 0 1 62 260 Tm (Esmakordne käivitamine ja sisselogimine on kirjeldatud) Tj
+1 0 0 1 62 244 Tm (juhendis 022-Claude-Code-esimene-kaivitamine.pdf.) Tj
+/F2 13 Tf
+1 0 0 1 62 218 Tm (Kui miski ei õnnestu) Tj
+/F1 11 Tf
+1 0 0 1 62 196 Tm (Kirjuta oma juhendajale ja lisa kaasa logifailid, mis on) Tj
+1 0 0 1 62 180 Tm (loetletud paigalduse kokkuvõtte lehel \(Vali-IT-kokkuvote.html\).) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding>>
+endobj
+6 0 obj
+<</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding>>
+endobj
+7 0 obj
+<</Title (IntelliJ plugin: Claude Code - Vali-IT)>>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000241 00000 n 
+0000002527 00000 n 
+0000002622 00000 n 
+0000002722 00000 n 
+trailer
+<</Size 8 /Root 1 0 R /Info 7 0 R>>
+startxref
+2789
+%%EOF
