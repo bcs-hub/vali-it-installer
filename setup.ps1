@@ -503,7 +503,9 @@ function Invoke-PostgresSetup {
             Add-Ok "PostgreSQL andmebaas '$DbName' ($dur)"
             Add-StateEntry 'db' $DbName $dur
         } else {
-            Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
+            # Server is up and reachable, only CREATE DATABASE failed ->
+            # the database-creation guide, not the missing-server one.
+            Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-Andmebaasi-loomine-PostgreSQLis.pdf'
         }
     }
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue

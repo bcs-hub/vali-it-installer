@@ -1,0 +1,46 @@
+%PDF-1.4
+1 0 obj
+<</Type /Catalog /Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type /Pages /Kids [3 0 R] /Count 1>>
+endobj
+3 0 obj
+<</Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources <</Font <</F1 5 0 R /F2 6 0 R>>>> /Contents 4 0 R>>
+endobj
+4 0 obj
+<</Length 235>>
+stream
+BT
+/F2 20 Tf
+1 0 0 1 62 780 Tm (Andmebaasi loomine PostgreSQLis) Tj
+/F1 11 Tf
+1 0 0 1 62 740 Tm (Käesolev juhend on ajutine kohatäide \(placeholder\).) Tj
+1 0 0 1 62 724 Tm (Täielik juhend koos ekraanipiltidega lisatakse hiljem.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<</Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding>>
+endobj
+6 0 obj
+<</Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding>>
+endobj
+7 0 obj
+<</Title (Andmebaasi loomine PostgreSQLis - Vali-IT)>>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000056 00000 n 
+0000000111 00000 n 
+0000000241 00000 n 
+0000000525 00000 n 
+0000000620 00000 n 
+0000000720 00000 n 
+trailer
+<</Size 8 /Root 1 0 R /Info 7 0 R>>
+startxref
+790
+%%EOF
