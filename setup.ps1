@@ -478,14 +478,14 @@ function Invoke-PostgresSetup {
     $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue |
         Sort-Object FullName -Descending | Select-Object -First 1
     if (-not $psql) {
-        Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-serveri-installimine.pdf'
+        Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
         return
     }
     $env:PGPASSWORD = $PgSuperPassword
     $exists = & $psql.FullName -h localhost -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'" 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Warn "Ei saanud PostgreSQL serveriga ühendust (kas parool pole '$PgSuperPassword'?). Loo andmebaas käsitsi."
-        Add-Fail "PostgreSQL andmebaas '$DbName' (server olemas, aga ühendus ebaõnnestus)" 'docs/install/009-PostgreSQL-serveri-installimine.pdf'
+        Add-Fail "PostgreSQL andmebaas '$DbName' (server olemas, aga ühendus ebaõnnestus)" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
     } elseif ("$exists".Trim() -eq '1') {
         if (Test-StateEntry 'db' $DbName) {
             Write-Ok "Andmebaas '$DbName' — loodud (varasemal käivitusel)"
@@ -503,7 +503,7 @@ function Invoke-PostgresSetup {
             Add-Ok "PostgreSQL andmebaas '$DbName' ($dur)"
             Add-StateEntry 'db' $DbName $dur
         } else {
-            Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-serveri-installimine.pdf'
+            Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
         }
     }
     Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
