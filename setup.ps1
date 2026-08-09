@@ -478,14 +478,27 @@ function Invoke-PostgresSetup {
     $psql = Get-ChildItem 'C:\Program Files\PostgreSQL\*\bin\psql.exe' -ErrorAction SilentlyContinue |
         Sort-Object FullName -Descending | Select-Object -First 1
     if (-not $psql) {
-        Add-Fail "PostgreSQL andmebaas '$DbName'" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
+        # Installing the server by hand means picking a password — say which
+        # one, or the course project cannot connect later.
+        Add-Fail "PostgreSQL andmebaas '$DbName'" `
+            'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf' `
+            "PostgreSQL serverit ei leitud. Kui paigaldad selle käsitsi, siis pane kasutaja 'postgres' parooliks '$PgSuperPassword' — kursuse projekt eeldab just seda parooli."
         return
     }
     $env:PGPASSWORD = $PgSuperPassword
     $exists = & $psql.FullName -h localhost -U postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$DbName'" 2>$null
     if ($LASTEXITCODE -ne 0) {
         Write-Warn "Ei saanud PostgreSQL serveriga ühendust (kas parool pole '$PgSuperPassword'?). Loo andmebaas käsitsi."
-        Add-Fail "PostgreSQL andmebaas '$DbName' (server olemas, aga ühendus ebaõnnestus)" 'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf'
+        # The course project hardcodes the password in application.properties,
+        # so a pre-existing server with another password breaks the backend
+        # much later (at server start) unless the student fixes one of the two.
+        Add-Fail "PostgreSQL andmebaas '$DbName' (server olemas, aga ühendus ebaõnnestus)" `
+            'docs/install/009-PostgreSQL-server-puudub-pgAdminis.pdf' `
+            ("Sinu arvutis oli PostgreSQL juba varem olemas ja kasutaja 'postgres' parool ei ole '$PgSuperPassword'. Loo andmebaas '$DbName' käsitsi pgAdminis.`n" +
+             "NB! Kursuse projekt eeldab parooli '$PgSuperPassword'. Vali üks kahest:`n" +
+             "1) muuda pgAdminis kasutaja 'postgres' parooliks '$PgSuperPassword' (soovitatav — nii sobivad kõik juhendid);`n" +
+             "2) või jäta oma parool meelde ja kirjuta see kursuse projektis faili backend/src/main/resources/application.properties (rida spring.datasource.password).`n" +
+             "Kui kumbagi ei tee, siis backend ei käivitu.")
     } elseif ("$exists".Trim() -eq '1') {
         if (Test-StateEntry 'db' $DbName) {
             Write-Ok "Andmebaas '$DbName' — loodud (varasemal käivitusel)"
