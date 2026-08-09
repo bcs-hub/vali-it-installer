@@ -93,6 +93,10 @@ function Restore-ConsoleMode {
 # read after the window has closed (best-effort — a failed transcript must
 # not stop the uninstall).
 $LogFile = Join-Path $env:TEMP 'vali-it-uninstall.log'
+# Winget output MUST go to its own file: Start-Transcript holds $LogFile open
+# for the whole run, so appending to it from a redirect fails with "the process
+# cannot access the file" — and that failure aborts the winget call itself.
+$WingetLogFile = Join-Path $env:TEMP 'vali-it-uninstall-winget.log'
 $script:LogStarted = $false
 try {
     # -Append for the same reason as in setup.ps1: a retry run must not
@@ -218,12 +222,34 @@ function Set-Removed([string]$Kind, [string]$Value) {
 }
 
 # Run one winget uninstall attempt; its (often very long, e.g. Docker's
-# whole install log) output goes to $LogFile, not the screen. Returns the
+# whole install log) output goes to $WingetLogFile, not the screen. Returns the
 # exit code.
 function Invoke-WingetUninstall([string]$Id, [string[]]$Extra) {
     $wingetArgs = @('uninstall', '--id', $Id, '-e', '--silent',
         '--disable-interactivity', '--accept-source-agreements') + $Extra
-    & winget @wingetArgs *>> $LogFile
+    # $LASTEXITCODE keeps its previous value when the call itself fails to
+    # start, which once made every app report "removed (0s)" while nothing was
+    # uninstalled. Clear it first and treat "never set" as a failure.
+    $global:LASTEXITCODE = $null
+    # A redirect failure is a non-terminating error, so without this it only
+    # prints red text and execution continues past the uninstall. (It must be
+    # a preference, not -ErrorAction: a parameter would be passed on to winget
+    # as an argument.)
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = 'Stop'
+    try {
+        & winget @wingetArgs *>> $WingetLogFile
+    } catch {
+        # Restore first: under 'Stop' even -ErrorAction SilentlyContinue below
+        # would throw again (and the log file is the likely culprit anyway).
+        $ErrorActionPreference = $prevEap
+        "[uninstall.ps1] winget call failed: $($_.Exception.Message)" |
+            Out-File -FilePath $WingetLogFile -Append -Encoding UTF8 -ErrorAction SilentlyContinue
+        return 1
+    } finally {
+        $ErrorActionPreference = $prevEap
+    }
+    if ($null -eq $LASTEXITCODE) { return 1 }
     return $LASTEXITCODE
 }
 
@@ -364,6 +390,9 @@ function Write-UninstallHtml {
         }
         $h += '<p>Mõne rakenduse eemaldaja võib jätta kettale andmekaustu (nt PostgreSQL-i andmed, JetBrains-i vahemälud) — need on ohutud käsitsi kustutada.</p>'
         $h += "<p>Tehniline logi: <code>$(ConvertTo-HtmlText $LogFile)</code></p>"
+        if (Test-Path $WingetLogFile) {
+            $h += "<p>Rakenduste eemaldamine (winget): <code>$(ConvertTo-HtmlText $WingetLogFile)</code></p>"
+        }
         $h += '</body></html>'
 
         ($h -join "`n") | Out-File -FilePath $path -Encoding UTF8
