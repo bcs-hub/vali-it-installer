@@ -142,9 +142,30 @@ function Format-Duration([TimeSpan]$t) {
 # transcribes these too, so a pwsh run still gets the verbose log. Harmless.
 function Write-Tick([string]$Text) {
     try {
+        # A line longer than the window wraps, and then "`r" only returns to
+        # the start of the LAST visual row — every tick then leaves another
+        # half-overwritten copy on screen (PostgreSQL's long time hint did
+        # exactly that). Truncate to one row; keep the tail, since that is
+        # where the ticking seconds are.
+        $w = 0
+        try { $w = [Console]::WindowWidth } catch { }
+        if ($w -gt 1 -and $Text.Length -ge $w) {
+            $keep = $w - 1
+            $Text = '…' + $Text.Substring($Text.Length - ($keep - 1))
+        }
         [Console]::ForegroundColor = [ConsoleColor]::Cyan
         [Console]::Write("`r$Text")
         [Console]::ResetColor()
+    } catch { }
+}
+
+# "`r" alone only moves the cursor back; the previous, longer text stays on
+# screen and its tail hangs after whatever is written next. Blank the row.
+function Clear-TickLine {
+    try {
+        $w = [Console]::WindowWidth
+        if ($w -gt 1) { [Console]::Write("`r" + (' ' * ($w - 1)) + "`r") }
+        else { [Console]::Write("`r") }
     } catch { }
 }
 
@@ -155,7 +176,11 @@ function Write-Tick([string]$Text) {
 # means the job machinery itself failed (caller may fall back to running in
 # the foreground).
 function Invoke-TickedJob([string]$Label, [string]$Exe, [object[]]$CmdArgs,
-    [string]$Dir = '', [string]$JavaHome = '', [string]$OutLog = '') {
+    [string]$Dir = '', [string]$JavaHome = '', [string]$OutLog = '',
+    [string]$Note = '') {
+    # A long hint belongs on its own static line, not in the ticking label:
+    # the ticking line must stay short enough to fit one console row.
+    if ($Note) { Write-Host "  ($Note)" -ForegroundColor DarkGray }
     $j = Start-Job -ScriptBlock {
         param($Exe, $CmdArgs, $Dir, $JavaHome)
         if ($Dir) { Set-Location $Dir }
@@ -169,7 +194,7 @@ function Invoke-TickedJob([string]$Label, [string]$Exe, [object[]]$CmdArgs,
         Start-Sleep -Seconds 1
     }
     $dur = Format-Duration $sw.Elapsed
-    Write-Tick "`r"
+    Clear-TickLine
     Write-Host ("$Label ... $dur  ") -ForegroundColor Cyan
     $res = @(Receive-Job $j 2>$null) |
         Where-Object { $_ -and $_.PSObject.Properties['Code'] } | Select-Object -Last 1
@@ -425,8 +450,8 @@ function Install-WindowsApps {
         # Per-app time hint (config field 5) replaces the generic note when
         # present — e.g. PostgreSQL is by far the slowest step.
         $hint = if ($a.F5) { $a.F5 } else { 'võib võtta mitu minutit' }
-        $r = Invoke-TickedJob "[$i/$n] Paigaldan: $($a.F3) ($hint)" `
-            'winget' $wingetArgs '' '' $WingetLogFile
+        $r = Invoke-TickedJob "[$i/$n] Paigaldan: $($a.F3)" `
+            'winget' $wingetArgs '' '' $WingetLogFile $hint
         if ($r.Code -eq 999) {
             # Job machinery failed on this machine — run in the foreground
             # like the old days (winget's own progress shows instead).
@@ -604,7 +629,7 @@ function Invoke-IdeaSetup {
         Start-Sleep -Seconds 1
     }
     $dur = Format-Duration $sw.Elapsed
-    Write-Tick "`r"
+    Clear-TickLine
     Write-Host ("$label ... $dur  ") -ForegroundColor Cyan
     if ($proc.ExitCode -eq 0) {
         Write-Ok "IntelliJ pluginad — paigaldatud ($dur)"
@@ -926,8 +951,9 @@ function Invoke-CourseSetup {
                     Add-Fail "$desc — npm puudub, frontendi sõltuvusi ei saanud ette laadida (esimene käivitus laeb need ise)" ''
                     $ok = $false
                 } else {
-                    $r = Invoke-TickedJob 'Laen frontendi sõltuvused (npm ci — võib võtta mitu minutit)' `
-                        $npm @('ci', '--no-audit', '--no-fund') $frontend '' $log
+                    $r = Invoke-TickedJob 'Laen frontendi sõltuvused (npm ci)' `
+                        $npm @('ci', '--no-audit', '--no-fund') $frontend '' $log `
+                        'võib võtta mitu minutit'
                     if ($r.Code -eq 0) {
                         Write-Ok "$desc — frontendi sõltuvused laaditud ($($r.Duration))"
                     } else {
@@ -951,8 +977,9 @@ function Invoke-CourseSetup {
                 # is not on this session's PATH and JAVA_HOME may be unset.
                 # The job runs in its own process, so JAVA_HOME stays local.
                 $jdkHome = Split-Path (Split-Path $jdk.FullName)
-                $r = Invoke-TickedJob 'Laen backendi sõltuvused (Gradle — võib võtta mitu minutit)' `
-                    (Join-Path $backend 'gradlew.bat') @('--no-daemon', 'dependencies') $backend $jdkHome $log
+                $r = Invoke-TickedJob 'Laen backendi sõltuvused (Gradle)' `
+                    (Join-Path $backend 'gradlew.bat') @('--no-daemon', 'dependencies') $backend $jdkHome $log `
+                    'võib võtta mitu minutit'
                 if ($r.Code -eq 0) {
                     Write-Ok "$desc — backendi sõltuvused laaditud ($($r.Duration))"
                 } else {
