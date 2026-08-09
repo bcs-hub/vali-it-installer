@@ -151,7 +151,7 @@ directly.
   `irm | iex` (the student path). Overrides are env vars: `$env:ITC_DISTRO`, `$env:ITC_BRANCH`.
 - **Public GitHub repo: `bcs-hub/vali-it-installer`**; students fetch `main` directly
   (`$RepoSlug` in setup.ps1, one-liner URL in README.md). Nothing sensitive in the repo,
-  ever.
+  ever. A separate workshop copy exists — see "Workshop fork" below.
 
 ## Hard Requirements (from the spec)
 
@@ -163,3 +163,47 @@ directly.
   shows a BOM as a red "command not found" error on line 1, while HTTP charset handles the
   decoding anyway. Trade-off: running the *file* locally in PS 5.1 mangles Estonian
   characters — test locally with PowerShell 7 (`pwsh`). Keep CRLF/LF rules from `.gitattributes`.
+
+## Workshop fork (2026-08-09)
+
+A copy of this repo lives at **`raintuur/vali-it-installer-claude-code-workshop`**
+(public, own GitHub repo — NOT a GitHub "template", NOT a fork in the GitHub sense;
+it was cloned with full history and pushed to a fresh remote). It is intended for a
+Claude Code workshop and was created as an **exact content copy**: only the repo slug
+differs, the installer logic is untouched. Any workshop-specific trimming (dropping
+PostgreSQL / Docker / IntelliJ / the `bank41` course preload, which are all
+config-driven) is still an open decision, not yet done.
+
+- **What differs from this repo**: `bcs-hub/vali-it-installer` →
+  `raintuur/vali-it-installer-claude-code-workshop` in `$RepoSlug` (setup.ps1,
+  uninstall.ps1) plus the one-liner URLs in README.md, CLAUDE.md and `docs/`
+  (10 occurrences total). `docs/examples/Vali-IT-kokkuvote.html` deliberately kept the
+  old link — it is an archived summary from a past run, not a template.
+- **`$RepoSlug` is the only thing that matters**: it feeds the tarball download, the
+  guide links in the summary and the one-liner in the HTML summary. Get it right and
+  everything else follows. `$InstallDirName` is still `vali-it-installer`, so BOTH
+  installers extract to `~/vali-it-installer` inside Ubuntu — running one after the
+  other overwrites the other's copy. Change it if the two must coexist.
+- **Permissions** (checked 2026-08-09): the `gh` CLI here is authenticated as
+  `raintuur`, whose only org is `Tallinna-Polutehnikum`. On `bcs-hub` this account has
+  `push` but NOT `admin` — enough to push to `vali-it-installer`, but it cannot create
+  repos under `bcs-hub` or flip the template flag. That is why the workshop copy sits
+  under the personal account.
+- **Working on the workshop repo**: clone it separately (do not add it as a second
+  remote here — pushing the wrong branch to the wrong slug is the failure mode). Both
+  repos must stay green under the same lint/test commands above; the student-facing
+  rules (Estonian output, no BOM in setup.ps1, public repo) apply there identically.
+- **Porting changes between the two**: cherry-pick, and re-check `$RepoSlug` survived —
+  a commit that touches setup.ps1 line 31 will carry the wrong slug across.
+- **Verify a workshop change actually reaches students** (the copy was validated this
+  way; all four returned 200):
+
+```bash
+# raw setup.ps1 must be reachable AND arrive without a BOM (PS 5.1 shows a BOM as a
+# red "command not found" on line 1 under irm | iex)
+curl -s https://raw.githubusercontent.com/raintuur/vali-it-installer-claude-code-workshop/main/setup.ps1 |
+  python3 -c "import sys; d=sys.stdin.buffer.read(); print('BOM:', d[:3]==b'\xef\xbb\xbf')"
+# the tarball setup.ps1 downloads for itself, and a guide link in Get-DocUrl form
+curl -sI -L https://github.com/raintuur/vali-it-installer-claude-code-workshop/archive/refs/heads/main.tar.gz | grep ^HTTP
+curl -sI -L "https://github.com/raintuur/vali-it-installer-claude-code-workshop/blob/main/docs/install/027-IntelliJ-plugin-Claude-Code.pdf?raw=true" | grep ^HTTP
+```
