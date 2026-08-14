@@ -471,6 +471,38 @@ function Install-WindowsApps {
     }
 }
 
+# PromptFoo has no winget package (confirmed via 'winget search promptfoo'
+# returning no hits) -> installed via npm, same idea as the course project's
+# npm ci. Needs Node.js, which Install-WindowsApps installs just before this
+# runs; a fresh Node is not on this session's PATH, hence Find-NpmCmd.
+function Invoke-PromptfooSetup {
+    if (Get-Command promptfoo -ErrorAction SilentlyContinue) {
+        if (Test-StateEntry 'app' 'promptfoo') {
+            Write-Ok 'PromptFoo — paigaldatud (varasemal käivitusel)'
+            Add-Ok 'PromptFoo — paigaldatud varasemal käivitusel'
+        } else {
+            Write-Ok 'PromptFoo — juba olemas'
+            Add-Ok 'PromptFoo — oli juba olemas'
+        }
+        return
+    }
+    $npm = Find-NpmCmd
+    if (-not $npm) {
+        Add-Fail 'PromptFoo (npm puudub)' 'docs/install/029-PromptFoo-installimine-Windows.pdf'
+        return
+    }
+    $r = Invoke-TickedJob 'Paigaldan: PromptFoo' `
+        $npm @('install', '-g', 'promptfoo') '' '' $WingetLogFile 'võib võtta mitu minutit'
+    if ($r.Code -eq 0) {
+        Write-Ok "PromptFoo — paigaldatud ($($r.Duration))"
+        Add-Ok "PromptFoo ($($r.Duration))"
+        Add-StateEntry 'app' 'promptfoo' $r.Duration
+    } else {
+        Write-Err 'PromptFoo — paigaldamine ebaõnnestus'
+        Add-Fail 'PromptFoo' 'docs/install/029-PromptFoo-installimine-Windows.pdf'
+    }
+}
+
 # Create the course database. NEVER touches an existing PostgreSQL setup:
 # if the superuser password is not the course default, this lands in the
 # manual list instead.
@@ -1242,6 +1274,7 @@ Write-Host ''
 Assert-Prerequisites
 Get-RepoFiles
 Install-WindowsApps
+Invoke-PromptfooSetup
 Invoke-PostgresSetup
 Invoke-IdeaSetup
 
