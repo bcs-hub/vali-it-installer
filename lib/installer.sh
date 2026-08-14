@@ -131,12 +131,3 @@ install_tool_claude() {
         npm install -g @anthropic-ai/claude-code
     )
 }
-
-install_tool_promptfoo() {
-    load_nvm || return 1
-    (
-        set +u
-        nvm use default >/dev/null
-        npm install -g promptfoo
-    )
-}
