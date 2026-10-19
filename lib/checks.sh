@@ -58,3 +58,27 @@ tool_available() {
     found="$(command -v "$cmd" 2>/dev/null)" || return 1
     [[ "$found" != /mnt/* ]]
 }
+
+# tool_ready <id> <command> - tool_available, plus the optional extra check
+# check_tool_<id> for tools whose command alone does not prove a working
+# install. Used by both the install and the verify engine.
+tool_ready() {
+    local id="$1" cmd="$2"
+    tool_available "$cmd" || return 1
+    if declare -F "check_tool_${id}" >/dev/null; then
+        "check_tool_${id}"
+    fi
+}
+
+# check_tool_playwright - the npm package alone cannot run tests: it also
+# needs the exact Chromium build it was released with, downloaded to
+# ~/.cache/ms-playwright/chromium-<revision>. The revision comes from the
+# installed package's browsers.json; INSTALLATION_COMPLETE is written by
+# Playwright only after a successful download.
+check_tool_playwright() {
+    local root revision
+    root="$(npm root -g 2>/dev/null)" || return 1
+    [[ -f "$root/playwright-core/browsers.json" ]] || return 1
+    revision="$(node -p "require('$root/playwright-core/browsers.json').browsers.find(b => b.name === 'chromium').revision" 2>/dev/null)" || return 1
+    [[ -f "${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright}/chromium-${revision}/INSTALLATION_COMPLETE" ]]
+}

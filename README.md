@@ -41,7 +41,7 @@ Sama kokkuvõte salvestatakse töölauale failina **Vali-IT-kokkuvote.html**
 **Ubuntu (WSL2) poolel** (loendid: [`config/packages.conf`](config/packages.conf),
 [`config/ai-tools.conf`](config/ai-tools.conf)):
 
-OpenJDK 21, git, GitHub CLI, NVM + Node.js LTS, Claude Code, Python 3,
+OpenJDK 21, git, GitHub CLI, NVM + Node.js LTS, Claude Code, Playwright + Chromium, Python 3,
 curl, unzip, tree, jq, ripgrep, poppler-utils, postgresql-client.
 
 ### Andmebaas

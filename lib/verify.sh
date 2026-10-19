@@ -16,16 +16,21 @@ verify_config() {
     local file="$1" hint="$2"
     local -a lines
     mapfile -t lines < <(read_config "$file")
-    local missing=0 line cmd desc
+    local missing=0 line id cmd desc
 
     for line in "${lines[@]}"; do
         split_config_line "$line"
+        id="$CFG_1"
         cmd="$CFG_2"
         desc="$CFG_3"
-        if tool_available "$cmd"; then
+        if tool_ready "$id" "$cmd"; then
             ui_ok "$desc"
         else
-            ui_error "$desc — käsk '${cmd}' puudub"
+            if tool_available "$cmd"; then
+                ui_error "$desc — käsk '${cmd}' on olemas, aga paigaldus on poolik"
+            else
+                ui_error "$desc — käsk '${cmd}' puudub"
+            fi
             printf '    → Kuidas parandada: %s\n' "$hint"
             missing=$((missing + 1))
         fi
