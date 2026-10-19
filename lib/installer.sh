@@ -16,6 +16,9 @@ _ITC_INSTALLER_LOADED=1
 
 # Pinned NVM release; bump deliberately, not implicitly.
 ITC_NVM_VERSION="v0.40.3"
+# Pinned Playwright release; each release downloads its own Chromium build,
+# so a bump also downloads a new browser (~150 MB).
+ITC_PLAYWRIGHT_VERSION="1.48.2"
 
 apt_refresh() {
     ui_task "Uuendan paketiloendeid (apt update)" \
@@ -67,7 +70,7 @@ install_custom_tools() {
         desc="$CFG_3"
         func="install_tool_${id}"
 
-        if tool_available "$cmd"; then
+        if tool_ready "$id" "$cmd"; then
             ui_ok "[$i/$total] $desc — juba paigaldatud"
             continue
         fi
@@ -129,5 +132,17 @@ install_tool_claude() {
         set +u
         nvm use default >/dev/null
         npm install -g @anthropic-ai/claude-code
+    )
+}
+
+install_tool_playwright() {
+    load_nvm || return 1
+    (
+        set +u
+        nvm use default >/dev/null
+        npm install -g "playwright-core@${ITC_PLAYWRIGHT_VERSION}"
+        # The package's own CLI downloads the Chromium build matching this
+        # exact version, plus its Linux libraries (apt, via sudo).
+        playwright-core install --with-deps chromium
     )
 }
